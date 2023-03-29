@@ -6,7 +6,7 @@ with open("./base_config.yaml") as f:
     config = yaml.load(f, Loader = yaml.FullLoader)
 
 env = config["map"]
-
+print(env)
 
 
 # sim.init_plot()
