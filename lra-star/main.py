@@ -125,4 +125,3 @@ while not all([agent_pos[i] == agents[i][-1] for i in agents]) \
     
     step += 1
 
-

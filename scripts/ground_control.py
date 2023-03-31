@@ -13,6 +13,7 @@ class GroundControlSystem():
         self._task_queue = task_list.copy()
 
     def assign_tasks(self):
+        # Create NxN matrix based on number of agents/tasks
         if len(self._agent_list) > len(self._task_list):
             self._cost_matrix = np.zeros((len(self._agent_list), len(self._agent_list)))
         else:
@@ -21,6 +22,7 @@ class GroundControlSystem():
         self._agent_order = list(self._agent_list.keys())
         self._task_order = list(self._task_list.keys())
 
+        # Calculate costs
         for i, agent_id in enumerate(self._agent_order):
             for j, task_id in enumerate(self._task_order):
                 self._cost_matrix[i][j] = self.generate_heuristic(self._agent_list[agent_id], self._task_list[task_id])
@@ -106,7 +108,7 @@ class GroundControlSystem():
         """
         distance = self.get_manhattan_distance(agent.get_pos(), task.pick_loc)
         time = self.get_time_since_input(task.time_input)
-        cost = distance*dist_weight-time*time_weight-task.priority
+        cost = (distance*dist_weight-time*time_weight)/(task.priority+1)
         return cost
 
     def get_time_since_input(self, time_input):

@@ -1,6 +1,6 @@
-from hungarian_algorithm import GroundControlSystem
-from Quadrotor import Quadrotor
-from utils import Task, Position, State
+from scripts.ground_control import GroundControlSystem
+from scripts.Quadrotor import Quadrotor
+from scripts.utils import Task, Position, State
 import time
 import yaml
 
@@ -107,3 +107,5 @@ if __name__ == '__main__':
     gcs.set_task_graph(draw=True)
 
     task_assignment = gcs.get_task_assignment(draw=True)
+
+    
