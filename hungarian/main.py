@@ -1,42 +1,104 @@
-import time
+from hungarian_algorithm import GroundControlSystem
+from Quadrotor import Quadrotor
+from utils import Task, Position, State
+import yaml
 
-def generate_heuristic(env,agent, task, dist_weight=1, time_weight=0.05):
-    """
-    Generates a heuristic value for task assignment
-    Args:
-        env: The warehouse layout
-        agent_list: an agent's position in the warehouse and availability
-        task: a task's pic and drop location, time of input, and whether the task has the priority flag
-    Returns:
-        heuristic value: a float that represents the cost for this drone to complete this task
-    """
+if __name__ == '__main__':
+    # load configuration file from YAML file
+    with open('./config.yaml', 'r') as file:
+        config = yaml.load(file, Loader=yaml.FullLoader)
 
-    distance = get_manhattan_distance(agent.loc,task.pick_loc)
-    time = get_time_since_input(task.time_input)
-    cost = distance*dist_weight-time*time_weight-task.priority
-    return cost
+    use_hardware = config['use_hardware']
+    agent_init = config['agent_init']
+    colors = config['agent_colors']
+    time_delta = config['time_delta']
+    env = config['map']
+    num_agents = len(agent_init)
 
-def get_time_since_input(time_input):
-    """
-    Finds how many seconds ago the task was inputted
-    """
-    current_time=time.time()
-    return current_time-time_input
+    print(f'Number of Agents: [{num_agents}] -> {[agent_init[i][0] for i in range(len(agent_init))]}')
+    print(f'Use Hardware: [{use_hardware}]')
+    print(f'Time Delta (dt): [{time_delta}]')
 
-def get_manhattan_distance(pos_1,pos_2):
-    """
-    Takes in 2 positions as 3 element lists [x,y,z] and finds the manhattan distance between them 
-    """
-    x_dist=pos_1[0]-pos_2[0]
-    y_dist=pos_1[1]-pos_2[1]
-    z_dist=pos_1[2]-pos_2[2]
-    return abs(x_dist)+abs(y_dist)+abs(z_dist)
 
-def get_euclidian_distance(pos_1,pos_2):
-    """
-    Takes in 2 positions as 3 element lists [x,y,z] and finds the euclidian distance between them 
-    """
-    x_dist=pos_1[0]-pos_2[0]
-    y_dist=pos_1[1]-pos_2[1]
-    z_dist=pos_1[2]-pos_2[2]
-    return (x_dist**2+y_dist**2+z_dist**2)**0.5
+    # ---------------------------------------------------------------------------------------------------------
+    #### STEP 1.A: Define the task list
+    # ---------------------------------------------------------------------------------------------------------
+
+    # create the task list
+    task_list = dict()
+    pick_locations = config['pick_loc']
+    drop_locations = config['drop_loc']
+
+    print('-----------------------')
+    print('Task List')
+    print('-----------------------')
+
+    for i in range(len(pick_locations)):
+        t = Task(pick_loc=Position(x=pick_locations[i][1][0], y=pick_locations[i][1][1], z=pick_locations[i][1][2]),
+                drop_loc=Position(x=drop_locations[i][1][0], y=drop_locations[i][1][1], z=0.0), 
+                pick_id=pick_locations[i][0], 
+                drop_id=drop_locations[i][0], 
+                id='T'+str(i), 
+                priority=i,
+                time_input=i)
+        task_list[pick_locations[i][0]] = t
+
+        print(f'Task {t.id}: {t.pick_id} -> {t.drop_id}')
+
+    print('-----------------------')
+
+
+    # ---------------------------------------------------------------------------------------------------------
+    #### STEP 1.B: Define the agent list
+    # ---------------------------------------------------------------------------------------------------------
+
+    print('----------------------------------')
+    print('Agent List (with home position)')
+    print('----------------------------------')
+
+    agent_list = dict()
+    for i in range(num_agents):
+        # define initial state
+        start = State(x_pos=agent_init[i][1][0], 
+                    y_pos=agent_init[i][1][1])
+        # define the appropriate UR1
+        uri = 'radio://0/'+agent_init[i][0][2:]+'0/2M/E7E7E7E7E7'
+        # define agent as Quadrotor
+        agent = Quadrotor(init_state=start, 
+                        color=colors[i], 
+                        id=agent_init[i][0], 
+                        uri=uri,
+                        take_off_height=agent_init[i][2], 
+                        hardware_flag=use_hardware,
+                        dt=time_delta)
+        agent_list[agent._id] = agent
+
+        if use_hardware:
+            print(f'Agent {agent._id}: {agent_list[agent._id].get_pos().x, agent_list[agent._id].get_pos().y} \
+                ---> {uri}')
+        else:
+            print(f'Agent {agent._id}: {agent_list[agent._id].get_pos().x, agent_list[agent._id].get_pos().y} ')
+
+
+    print('----------------------------------')
+
+    if use_hardware:
+        print('\n !!!!!!!!Please ensure you confirm the Crazyflies are connected to the right radio channels!!!!!!!!')
+
+
+
+    # #########################################################################################################
+    #### STEP 2: Implement Multi-Agent Task Assignment
+    # #########################################################################################################
+
+
+    # ---------------------------------------------------------------------------------------------------------
+    #### STEP 2.A. Define the Ground Constrol System & compute assignment
+    # ---------------------------------------------------------------------------------------------------------
+
+    # instantiate ground control system object
+    gcs = GroundControlSystem(agent_list=agent_list, 
+                            task_list=task_list,
+                            env=env)
+    
+    gcs.assign_tasks()
