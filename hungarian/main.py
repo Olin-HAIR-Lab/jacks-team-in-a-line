@@ -1,6 +1,7 @@
 from hungarian_algorithm import GroundControlSystem
 from Quadrotor import Quadrotor
 from utils import Task, Position, State
+import time
 import yaml
 
 if __name__ == '__main__':
@@ -40,7 +41,7 @@ if __name__ == '__main__':
                 drop_id=drop_locations[i][0], 
                 id='T'+str(i), 
                 priority=i,
-                time_input=i)
+                time_input=time.time())
         task_list[pick_locations[i][0]] = t
 
         print(f'Task {t.id}: {t.pick_id} -> {t.drop_id}')
@@ -65,7 +66,7 @@ if __name__ == '__main__':
         uri = 'radio://0/'+agent_init[i][0][2:]+'0/2M/E7E7E7E7E7'
         # define agent as Quadrotor
         agent = Quadrotor(init_state=start, 
-                        color=colors[i], 
+                        color=None, 
                         id=agent_init[i][0], 
                         uri=uri,
                         take_off_height=agent_init[i][2], 
@@ -102,3 +103,7 @@ if __name__ == '__main__':
                             env=env)
     
     gcs.assign_tasks()
+
+    gcs.set_task_graph(draw=True)
+
+    task_assignment = gcs.get_task_assignment(draw=True)

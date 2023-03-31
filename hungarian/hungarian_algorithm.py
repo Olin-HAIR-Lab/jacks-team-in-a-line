@@ -1,5 +1,7 @@
 import numpy as np
+import matplotlib.pyplot as plt
 import time
+import networkx as nx
 
 class GroundControlSystem():
     def __init__(self, agent_list=None, task_list=None, env=None):
@@ -23,7 +25,7 @@ class GroundControlSystem():
             for j, task_id in enumerate(self._task_order):
                 self._cost_matrix[i][j] = self.generate_heuristic(self._agent_list[agent_id], self._task_list[task_id])
 
-        print(f"Cost matrix: {self._cost_matrix}")
+        print(f"Cost matrix:\n{np.round(self._cost_matrix.copy(), 2)}")
 
         assignments = self.hungarian_algorithm()
         total_cost, ans_cost_matrix = self.ans_calculation(self._cost_matrix, assignments)
@@ -42,6 +44,55 @@ class GroundControlSystem():
         print("Remaining tasks: ")
         for task in self._task_queue.items():
             print(f"{task[1].id}")
+    
+    def set_task_graph(self, draw=False):
+        """creates a directed graph based on the agents and task list using networkx"""
+        self.G=nx.DiGraph()
+
+        # add agent start locations:
+        for a in self._agent_list.values():
+            self.G.add_node(a._id, pos=(a.get_pos().x, a.get_pos().y))
+
+        # add pick and drop locations of tasks:
+        for t in self._task_list.values():
+            self.G.add_node(t.pick_id, pos=(t.pick_loc.x, t.pick_loc.y))
+            self.G.add_node(t.drop_id, pos=(t.drop_loc.x, t.drop_loc.y))
+            # add edges connecting pick and drop locations
+            self.G.add_edge(t.pick_id, t.drop_id)
+
+        pos=nx.get_node_attributes(self.G,'pos')
+
+        if draw:
+            nx.draw(self.G,pos,with_labels = True)
+            plt.show()
+    
+    def get_task_assignment(self, draw=False):
+        """return the task assignment and draw if required"""
+        
+        j=0
+        colors = ['b', 'g', 'r', 'm', 'y', 'c']
+
+        for agent, task in self._task_assignment.items():
+            if type(task) == list:
+                for i in range(len(task)):
+                    if i > 0:
+                        self.G.add_edge(task[i-1].drop_id, task[i].pick_id, color=colors[j])
+                        self.G.add_edge(task[i].pick_id, task[i].drop_id, color=colors[j])
+                    else:
+                        self.G.add_edge(agent._id, task[i].pick_id, color=colors[j])
+                        self.G.add_edge(task[i].pick_id, task[i].drop_id, color=colors[j])
+            else:
+                self.G.add_edge(agent._id, task.pick_id, color=colors[j])
+                self.G.add_edge(task.pick_id, task.drop_id, color=colors[j])
+            j+=1
+        
+        if draw:
+            color_scheme = nx.get_edge_attributes(self.G,'color').values()
+            pos=nx.get_node_attributes(self.G,'pos')
+            nx.draw(self.G,pos,with_labels = True, edge_color=color_scheme)
+            plt.show()
+
+        return self._task_assignment
     
     def generate_heuristic(self, agent, task, dist_weight=1, time_weight=0.05):
         """
