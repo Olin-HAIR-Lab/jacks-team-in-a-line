@@ -38,9 +38,9 @@ class Quadrotor():
         self._psi_track = []
 
         # task and trajectory
-        self._task = None
-        self._trajectory = None
-        self._traj_index = 0
+        self._task_queue_size = 0
+        self._path = None
+        self._path_index = 0
 
         # set up system
         # get/set simulation parameters
@@ -169,13 +169,11 @@ class Quadrotor():
                                             pos_cmd[3])
 
 
-    def task_complete(self):
-        # dist_thr = 0.05
-        # point1 = np.asarray([self._state.x_pos, self._state.y_pos, self._state.z_pos])
-        # point2 = np.asarray([self._trajectory[-1].x, self._trajectory[-1].y, self._trajectory[-1].z])
-        # return True if np.linalg.norm(point1-point2) < dist_thr else False
-        return False
-
+    def path_complete(self):
+        dist_thr = 0.05
+        point1 = np.asarray([self._state.x_pos, self._state.y_pos, self._state.z_pos])
+        point2 = np.asarray([self._path[-1].x, self._path[-1].y, self._path[-1].z])
+        return True if np.linalg.norm(point1-point2) < dist_thr else False
     
     def log_pos_callback(self, timestamp, data, logconf):
         self._state.x_pos = data['stateEstimate.x']
@@ -195,8 +193,11 @@ class Quadrotor():
         self.range_front = data['range.front']
         self.range_back = data['range.back']
 
-    def set_trajectory(self, path):
-        self._trajectory = path
+    def set_path(self, path):
+        self._path = path
+
+    def add_to_path(self, new_path):
+        self._path = self._path.append(new_path)
 
     def get_pos(self):
         return Position(x=self._state.x_pos, y=self._state.y_pos, z=self._state.z_pos)

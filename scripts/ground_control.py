@@ -10,21 +10,27 @@ class GroundControlSystem():
         self._task_assignment = None
         self._agent_paths = dict()
         self._env = env
-        self._task_queue = task_list.copy()
+        self._available_agents = list(self._agent_list.keys())
+        self._task_queue = list(self._task_queue.keys())
+        self._completed_tasks = []
 
+    def update(self):
+        for agent in self._agent_list.values():
+            if agent.path_complete():
+                self.assign_tasks()   
+                # TODO: finish this if statement
+        # TODO: finish this function           
+    
     def assign_tasks(self):
         # Create NxN matrix based on number of agents/tasks
-        if len(self._agent_list) > len(self._task_list):
-            self._cost_matrix = np.zeros((len(self._agent_list), len(self._agent_list)))
+        if len(self._available_agents) > len(self._task_queue):
+            self._cost_matrix = np.zeros((len(self._available_agents), len(self._available_agents)))
         else:
-            self._cost_matrix = np.zeros((len(self._task_list), len(self._task_list)))
-
-        self._agent_order = list(self._agent_list.keys())
-        self._task_order = list(self._task_list.keys())
+            self._cost_matrix = np.zeros((len(self._task_queue), len(self._task_queue)))
 
         # Calculate costs
-        for i, agent_id in enumerate(self._agent_order):
-            for j, task_id in enumerate(self._task_order):
+        for i, agent_id in enumerate(self._available_agents):
+            for j, task_id in enumerate(self._task_queue):
                 self._cost_matrix[i][j] = self.generate_heuristic(self._agent_list[agent_id], self._task_list[task_id])
 
         print(f"Cost matrix:\n{np.round(self._cost_matrix.copy(), 2)}")
@@ -33,11 +39,14 @@ class GroundControlSystem():
         total_cost, ans_cost_matrix = self.ans_calculation(self._cost_matrix, assignments)
         self._task_assignment = dict()
         for a in assignments:
-            if a[0] < len(self._agent_list) and a[1] < len(self._task_list):
-                agent_id = self._agent_order[a[0]]
-                task_id = self._task_order[a[1]]
+            if a[0] < len(self._available_agents) and a[1] < len(self._task_queue):
+                agent_id = self._available_agents[a[0]]
+                task_id = self._task_queue[a[1]]
                 self._task_assignment[self._agent_list[agent_id]] = self._task_list[task_id]
-                del self._task_queue[task_id]
+                self._completed_tasks[task_id] = self._task_list[task_id]
+                self._task_queue.remove(task_id)
+                self._available_agents.remove(agent_id)
+                del self._task_list[task_id]
 
         print("Assignments: ")
         for assignment in self._task_assignment.items():
