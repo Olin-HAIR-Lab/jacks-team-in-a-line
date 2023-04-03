@@ -7,54 +7,77 @@ class GroundControlSystem():
     def __init__(self, agent_list=None, task_list=None, env=None):
         self._agent_list = agent_list
         self._task_list = task_list
-        self._task_assignment = None
+        self._task_assignment = dict()
         self._agent_paths = dict()
         self._env = env
         self._available_agents = list(self._agent_list.keys())
-        self._task_queue = list(self._task_queue.keys())
-        self._completed_tasks = []
+        self._task_queue = list(self._task_list.keys())
+        self._completed_tasks = dict()
 
     def update(self):
-        for agent in self._agent_list.values():
+        for agent_id, agent in self._agent_list.items():
             if agent.path_complete():
-                self.assign_tasks()   
-                # TODO: finish this if statement
-        # TODO: finish this function           
+                agent.clear_tasks_and_path()
+            if agent.available_for_task() and agent_id not in self._available_agents:
+                self._available_agents.append(agent_id)
+            elif not agent.available_for_task() and agent_id in self._available_agents:
+                self._available_agents.remove(agent_id)
+            
+        self.assign_tasks()
+
+        # TODO: A* for each agent goes here
+        # A* uses agent.add_to_path() to add a sequence of TrajPoints to agent._path (see utils.py)
+        # All tasks assigned to an agent are stored in agent._task_queue, accessible with agent.get_task_queue()
+        # Tasks ids that haven't been planned yet are stored in agent._tasks_to_plan (USE THIS ONE TO NOT DOUBLE PLAN PATHS)
+        # Remove task ID from tasks_to_plan with agent.remove_planned_task() after A* path has been added
+
+        # TODO: LRA* goes here or after the agent.update()?
+
+        for agent in self._agent_list.values():
+            agent.update()    
     
     def assign_tasks(self):
+        if len(self._available_agents) < 1 or len(self._task_queue) < 1:
+            return
+
+        tasks_to_assign = self._task_queue.copy()
+
         # Create NxN matrix based on number of agents/tasks
-        if len(self._available_agents) > len(self._task_queue):
+        if len(self._available_agents) > len(tasks_to_assign):
             self._cost_matrix = np.zeros((len(self._available_agents), len(self._available_agents)))
         else:
-            self._cost_matrix = np.zeros((len(self._task_queue), len(self._task_queue)))
+            self._cost_matrix = np.zeros((len(tasks_to_assign), len(tasks_to_assign)))
 
         # Calculate costs
         for i, agent_id in enumerate(self._available_agents):
-            for j, task_id in enumerate(self._task_queue):
+            for j, task_id in enumerate(tasks_to_assign):
                 self._cost_matrix[i][j] = self.generate_heuristic(self._agent_list[agent_id], self._task_list[task_id])
 
         print(f"Cost matrix:\n{np.round(self._cost_matrix.copy(), 2)}")
 
         assignments = self.hungarian_algorithm()
         total_cost, ans_cost_matrix = self.ans_calculation(self._cost_matrix, assignments)
-        self._task_assignment = dict()
         for a in assignments:
-            if a[0] < len(self._available_agents) and a[1] < len(self._task_queue):
+            if a[0] < len(self._available_agents) and a[1] < len(tasks_to_assign):
                 agent_id = self._available_agents[a[0]]
-                task_id = self._task_queue[a[1]]
-                self._task_assignment[self._agent_list[agent_id]] = self._task_list[task_id]
+                task_id = tasks_to_assign[a[1]]
+                if self._agent_list[agent_id] in self._task_assignment:
+                    self._task_assignment[self._agent_list[agent_id]].append(self._task_list[task_id])
+                else:
+                    self._task_assignment[self._agent_list[agent_id]] = [(self._task_list[task_id])]
                 self._completed_tasks[task_id] = self._task_list[task_id]
+
+                self._agent_list[agent_id].add_task(self._task_list[task_id])
+
                 self._task_queue.remove(task_id)
-                self._available_agents.remove(agent_id)
-                del self._task_list[task_id]
 
         print("Assignments: ")
         for assignment in self._task_assignment.items():
-            print(f"{assignment[0]._id}: {assignment[1].id}")
+            print(f"{assignment[0]._id}: {[a.id for a in assignment[1]]}")
         
         print("Remaining tasks: ")
-        for task in self._task_queue.items():
-            print(f"{task[1].id}")
+        for task in self._task_queue:
+            print(f"{task}")
     
     def set_task_graph(self, draw=False):
         """creates a directed graph based on the agents and task list using networkx"""

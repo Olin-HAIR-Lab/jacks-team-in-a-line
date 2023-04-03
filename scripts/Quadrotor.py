@@ -1,6 +1,6 @@
 import numpy as np
 from math import sin, cos
-from utils import State, Position, VelCommand
+from scripts.utils import State, Position, VelCommand
 import cflib.crtp
 from cflib.crazyflie import Crazyflie
 from cflib.crazyflie.syncCrazyflie import SyncCrazyflie
@@ -38,8 +38,9 @@ class Quadrotor():
         self._psi_track = []
 
         # task and trajectory
-        self._task_queue_size = 0
-        self._path = None
+        self._task_queue = []
+        self._tasks_to_plan = []
+        self._path = []
         self._path_index = 0
 
         # set up system
@@ -128,6 +129,15 @@ class Quadrotor():
                             marker=dict(color=self._color, size=5,  
                             symbol='circle'))
 
+    def update(self):
+        if self._path_index + 1 < len(self._path):
+            self._path_index += 1
+            next_pos = self._path[self._path_index]
+            pos_setpoint = [next_pos.x_pos, next_pos.y_pos, next_pos.z_pos, next_pos.phi]
+            if self._hardware_flag:
+                self.position_setpoint_hw(pos_setpoint)
+            else:
+                self.position_setpoint_sim(pos_setpoint)
 
     def velocity_setpoint_sim(self, vel_cmd):
         """advances the system state using a simple kinematic model and the commanded velocity"""
@@ -170,6 +180,8 @@ class Quadrotor():
 
 
     def path_complete(self):
+        if len(self._path) < 1:
+            return True
         dist_thr = 0.05
         point1 = np.asarray([self._state.x_pos, self._state.y_pos, self._state.z_pos])
         point2 = np.asarray([self._path[-1].x, self._path[-1].y, self._path[-1].z])
@@ -193,11 +205,38 @@ class Quadrotor():
         self.range_front = data['range.front']
         self.range_back = data['range.back']
 
+    def clear_tasks_and_path(self):
+        self._task_queue = []
+        self._tasks_to_plan = []
+        self._path = []
+        self._path_index = 0
+
+    def available_for_task(self):
+        return len(self._task_queue) <= 3
+
+    def add_task(self, task):
+        self._task_queue.append(task)
+        self._tasks_to_plan.append(task.id)
+    
+    def get_task_queue(self):
+        return self._task_queue
+    
+    def get_tasks_to_plan(self):
+        return self._tasks_to_plan
+
+    def remove_planned_task(self, task_id):
+        self._tasks_to_plan.remove(task_id)
+    
     def set_path(self, path):
         self._path = path
 
     def add_to_path(self, new_path):
         self._path = self._path.append(new_path)
+
+    def get_next_pos(self):
+        if self._path_index + 1 < len(self._path):
+            return self._path[self._path_index + 1]
+        return None
 
     def get_pos(self):
         return Position(x=self._state.x_pos, y=self._state.y_pos, z=self._state.z_pos)

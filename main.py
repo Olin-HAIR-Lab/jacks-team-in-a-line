@@ -42,7 +42,7 @@ if __name__ == '__main__':
                 id='T'+str(i), 
                 priority=i,
                 time_input=time.time())
-        task_list[pick_locations[i][0]] = t
+        task_list['T'+str(i)] = t
 
         print(f'Task {t.id}: {t.pick_id} -> {t.drop_id}')
 
@@ -102,10 +102,11 @@ if __name__ == '__main__':
                             task_list=task_list,
                             env=env)
     
-    gcs.assign_tasks()
+    while True:
+        gcs.update()
 
-    gcs.set_task_graph(draw=True)
+        gcs.set_task_graph(draw=True)
 
-    task_assignment = gcs.get_task_assignment(draw=True)
+        task_assignment = gcs.get_task_assignment(draw=True)
 
     
