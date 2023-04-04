@@ -2,6 +2,7 @@ import numpy as np
 import matplotlib.pyplot as plt
 import time
 import networkx as nx
+from a_star import astar
 
 class GroundControlSystem():
     def __init__(self, agent_list=None, task_list=None, env=None):
@@ -34,7 +35,8 @@ class GroundControlSystem():
         # TODO: LRA* goes here or after the agent.update()?
 
         for agent in self._agent_list.values():
-            agent.update()    
+            agent.update()   
+        
     
     def assign_tasks(self):
         if len(self._available_agents) < 1 or len(self._task_queue) < 1:
@@ -291,3 +293,70 @@ class GroundControlSystem():
             total += mat[pos[i][0], pos[i][1]]
             ans_mat[pos[i][0], pos[i][1]] = mat[pos[i][0], pos[i][1]]
         return total, ans_mat
+
+    def get_hitbox(self, pos):
+        """
+        Given a center position, returns a list containing the
+        8 points immeditaely surrounding it (and the point itself)
+        """
+
+        neighbors = [(0, -1), (0, 1), (-1, 0), (1, 0), \
+                            (-1, -1), (1, 1), (-1, 1), (1, -1)]
+        hitbox = [tuple(map(sum, zip(pos, n))) for n in neighbors]
+        hitbox.append(pos)
+        return hitbox
+    
+    def init_astar(self):
+        for agent in self._agent_list.values():
+            for loc_i in range(len(agent._task_queue) - 1):
+                agent._path += (astar( \
+                    agent._task_queue[loc_i], agent._task_queue[loc_i + 1], self._env))
+        
+        for agent in self._agent_list.values():
+            print(agent._path)
+    
+    def _fix_collision(self, agent):
+        """
+        Given agent waits one timestep before continuing to move by inserting
+        a repeat of it's current position as the next step in the list
+        """
+        agent._path.insert(agent._path_index + 1, agent._path[agent._path_index])
+    
+    def find_collisions(self):
+        """
+        Find all potential collisions in the drones' next moves and then
+        preferbaly don't collide pls :D
+        """
+        all_hitboxes = []
+        # find all the hitboxes
+        for agent in self._agent_list.values():
+            all_hitboxes += self.get_hitbox(agent._path[agent._path_index])
+
+        agent_next_pos = [agent._path[agent._path_index + 1] for agent in self._agent_list.values()]
+
+        duplicates = [x for x in all_hitboxes if all_hitboxes.count(x) > 1]
+        # print(f"duplicates: {duplicates}")
+        drone_points = [point for point in list(agent_next_pos)\
+                    if point in duplicates]
+        # print(f"overlap: {drone_points}")
+        bad_agents = [list(agent_next_pos).index(o) for o in drone_points]
+
+        # is it good code? no. but that's okay
+        fixed_pairs = []
+
+        for agent_a in bad_agents:
+            for agent_b in bad_agents:
+                if {agent_a, agent_b} not in fixed_pairs and \
+                agent_a != agent_b and \
+                (agent_next_pos[agent_a] in self.get_hitbox(agent_next_pos[agent_b]) or \
+                agent_next_pos[agent_b] in self.get_hitbox(agent_next_pos[agent_a])):
+                    self._fix_collision(agent_b)
+                    fixed_pairs.append({agent_a, agent_b})
+                    
+    def go_and_dont_crash(self):
+        # for now, we're assuming every agent always has a target next point
+        # if that's not how the task assignment works we should figure that out
+
+        self.find_collisions()
+        for agent in self._agent_list.values():
+            agent._path_index += 1
