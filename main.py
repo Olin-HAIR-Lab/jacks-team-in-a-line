@@ -101,12 +101,12 @@ if __name__ == '__main__':
     gcs = GroundControlSystem(agent_list=agent_list, 
                             task_list=task_list,
                             env=env)
-    
-    # assign initial paths? i think this goes here
+
+
+
     
     while True:
         gcs.update()
-        gcs.go_and_dont_crash()
 
         gcs.set_task_graph(draw=True)
 

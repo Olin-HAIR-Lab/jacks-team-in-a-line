@@ -3,6 +3,7 @@ import matplotlib.pyplot as plt
 import time
 import networkx as nx
 from a_star import astar
+from generate_map import base_map
 
 class GroundControlSystem():
     def __init__(self, agent_list=None, task_list=None, env=None):
@@ -14,6 +15,9 @@ class GroundControlSystem():
         self._available_agents = list(self._agent_list.keys())
         self._task_queue = list(self._task_list.keys())
         self._completed_tasks = dict()
+
+        self._map = base_map(env)
+        print(self._map)
 
     def update(self):
         for agent_id, agent in self._agent_list.items():
@@ -29,13 +33,32 @@ class GroundControlSystem():
         # TODO: A* for each agent goes here
         # A* uses agent.add_to_path() to add a sequence of TrajPoints to agent._path (see utils.py)
         # All tasks assigned to an agent are stored in agent._task_queue, accessible with agent.get_task_queue()
-        # Tasks ids that haven't been planned yet are stored in agent._tasks_to_plan (USE THIS ONE TO NOT DOUBLE PLAN PATHS)
-        # Remove task ID from tasks_to_plan with agent.remove_planned_task() after A* path has been added
+        # Tasks ids that haven't been planned yet are stored in agent._task_to_plan (USE THIS ONE TO NOT DOUBLE PLAN PATHS)
+        # Remove task ID from task_to_plan with agent.remove_planned_task() after A* path has been added
+
+        for agent_id in self._available_agents:
+            agent = self._agent_list[agent_id]
+            if agent._task_to_plan:
+                task = self._task_list[agent._task_to_plan]
+                agent_pos = (agent.get_pos().x, agent.get_pos().y)
+                pick_loc = (task.pick_loc.x, task.pick_loc.y)
+                drop_loc = (task.drop_loc.x, task.drop_loc.y)
+
+                target_points = [agent_pos, pick_loc, drop_loc]
+
+                for loc_i in range(2):
+                    agent._path += (astar( \
+                    target_points[loc_i], target_points[loc_i + 1], self._map))
+
 
         # TODO: LRA* goes here or after the agent.update()?
 
+        self.find_collisions()
+
         for agent in self._agent_list.values():
             agent.update()   
+        
+        
         
     
     def assign_tasks(self):
@@ -306,6 +329,7 @@ class GroundControlSystem():
         hitbox.append(pos)
         return hitbox
     
+    @DeprecationWarning
     def init_astar(self):
         for agent in self._agent_list.values():
             for loc_i in range(len(agent._task_queue) - 1):
@@ -353,10 +377,10 @@ class GroundControlSystem():
                     self._fix_collision(agent_b)
                     fixed_pairs.append({agent_a, agent_b})
                     
-    def go_and_dont_crash(self):
+    '''def go_and_dont_crash(self):
         # for now, we're assuming every agent always has a target next point
         # if that's not how the task assignment works we should figure that out
 
         self.find_collisions()
         for agent in self._agent_list.values():
-            agent._path_index += 1
+            agent._path_index += 1'''

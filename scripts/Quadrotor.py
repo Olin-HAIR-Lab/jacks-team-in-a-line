@@ -39,7 +39,7 @@ class Quadrotor():
 
         # task and trajectory
         self._task_queue = []
-        self._tasks_to_plan = []
+        self._task_to_plan = ""
         self._path = []
         self._path_index = 0
 
@@ -207,7 +207,7 @@ class Quadrotor():
 
     def clear_tasks_and_path(self):
         self._task_queue = []
-        self._tasks_to_plan = []
+        self._task_to_plan = ""
         self._path = []
         self._path_index = 0
 
@@ -216,16 +216,16 @@ class Quadrotor():
 
     def add_task(self, task):
         self._task_queue.append(task)
-        self._tasks_to_plan.append(task.id)
+        self._task_to_plan = task.id
     
     def get_task_queue(self):
         return self._task_queue
     
-    def get_tasks_to_plan(self):
-        return self._tasks_to_plan
+    def get_task_to_plan(self):
+        return self._task_to_plan
 
     def remove_planned_task(self, task_id):
-        self._tasks_to_plan.remove(task_id)
+        self._task_to_plan = ""
     
     def set_path(self, path):
         self._path = path
