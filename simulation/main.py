@@ -1,3 +1,4 @@
+"""runs the simulation and plotting of the agent pathfinding"""
 from simulation import Simulation
 import plotly.graph_objects as go
 import yaml
@@ -33,11 +34,11 @@ def define_env(corners):
 
 # define_env(env["obstacles"])
 # print(define_env(env["obstacles"]))
-
+#Defines the environment with obstacles
 env = define_env(env["obstacles"])
-
+#Plots figures
 fig1 = go.Figure()
 fig2 = go.Figure()
-
+#Updates the simulation
 sim = Simulation(env = env, fig1 = fig1, fig2 = fig2)
 sim.init_plot()

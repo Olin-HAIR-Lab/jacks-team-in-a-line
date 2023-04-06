@@ -12,12 +12,13 @@ agent_init:     [['CF7', [-0.6, 0.9, 0.0], 0.4],
 
 agent_colors:   ['DarkBlue', 'DarkSlateGrey', 'MediumPurple']
 
-
+#                 Pick ID, [pick x, pick y, pick z]
 pick_loc:       [['P1', [0.4, 0.7, 0.4]],
                  ['P2', [0.3, -0.2, 0.4]], 
                  ['P3', [1.0, 0.2, 0.6]], 
                  ['P4', [0.2, -0.7, 0.4]]]
 
+#                 Drop ID, [drop x, drop y, drop z]
 drop_loc:       [['D1', [1.8, 0.6]], 
                  ['D2', [1.8, -0.3]], 
                  ['D2', [1.8, -0.3]], 

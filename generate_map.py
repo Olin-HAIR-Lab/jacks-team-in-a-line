@@ -1,16 +1,21 @@
+"""Generates an environment to simulate the agents in using a .yaml file"""
 import numpy as np
 
 def base_map(env):
+    """Generates the map of the drone environment"""
+    #Find the size of the environment
     x_min = env["dimensions"]["x_min"]
     y_min = env["dimensions"]["y_min"]
 
     x_size = env["dimensions"]["x_max"] - x_min
     y_size = env["dimensions"]["y_max"] - y_min
 
+    #Create a grid the size of the environment 
     grid = [[0] * x_size]
     for _ in range(y_size):
         grid.append([0] * x_size)
 
+    #Sets the grid to 1 where there would be an obstacle for the drone.
     for obstacle in env["obstacles"]:
         grid[obstacle[1] - y_min][obstacle[0] - x_min] = 1
     
@@ -25,12 +30,14 @@ def base_map(env):
     return grid
 
 def agent_map(map, agent_locs):
+    """Converts agent points of interest to points in the environment map"""
     for loc in agent_locs:
         map[int(loc[1] * 10 + 9)][int(loc[0] * 10 + 9)] = 0
     
     return map
 
 def find_points_of_interest(agent_list,task_assignment):
+    """Creates a list of points an agent will travel to in order to complete it's tasks"""
     agent_paths=[]
     for agent_instance in agent_list:
         #Create list of tuples that the agent wants to visit
