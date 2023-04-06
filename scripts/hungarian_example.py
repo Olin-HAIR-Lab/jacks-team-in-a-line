@@ -44,7 +44,7 @@ def mark_matrix(mat):
 		marked_zero_row.append(marked_zero[i][0])
 		marked_zero_col.append(marked_zero[i][1])
 
-	#Step 2-2-1
+	#Mark rows that do not contain marked 0 elements and store row indexes in the non_marked_row
 	non_marked_row = list(set(range(cur_mat.shape[0])) - set(marked_zero_row))
 	
 	marked_cols = []
@@ -54,28 +54,34 @@ def mark_matrix(mat):
 		for i in range(len(non_marked_row)):
 			row_array = zero_bool_mat[non_marked_row[i], :]
 			for j in range(row_array.shape[0]):
-				#Step 2-2-2
+				#Search non_marked_row element, and find out if there are any unmarked 0 elements in the corresponding column
 				if row_array[j] == True and j not in marked_cols:
-					#Step 2-2-3
+					#Store the column indexes in the marked_cols
 					marked_cols.append(j)
 					check_switch = True
 
 		for row_num, col_num in marked_zero:
-			#Step 2-2-4
+			#Compare the column indexes stored in marked_zero and marked_cols
 			if row_num not in non_marked_row and col_num in marked_cols:
-				#Step 2-2-5
+				#If a matching column index exists, the corresponding row_index is saved to non_marked_rows
 				non_marked_row.append(row_num)
 				check_switch = True
-	#Step 2-2-6
+	#Next, the row indexes that are not in non_marked_row are stored in marked_rows
 	marked_rows = list(set(range(mat.shape[0])) - set(non_marked_row))
 
 	return(marked_zero, marked_rows, marked_cols)
 
 def adjust_matrix(mat, cover_rows, cover_cols):
+
+	'''
+	If the first set of column and row reductions does not solve for an optimal task assignment, 
+	this function shifts the zeros to find an optimal assignment
+	'''
+
 	cur_mat = mat
 	non_zero_element = []
 
-	#Step 4-1
+	#Find the minimum value for an element that is not in marked_rows and not in marked_cols
 	for row in range(len(cur_mat)):
 		if row not in cover_rows:
 			for i in range(len(cur_mat[row])):
@@ -83,19 +89,22 @@ def adjust_matrix(mat, cover_rows, cover_cols):
 					non_zero_element.append(cur_mat[row][i])
 	min_num = min(non_zero_element)
 
-	#Step 4-2
+	#Subtract the elements which not in marked_rows nor marked_cols from the minimum values obtained in the previous step
 	for row in range(len(cur_mat)):
 		if row not in cover_rows:
 			for i in range(len(cur_mat[row])):
 				if i not in cover_cols:
 					cur_mat[row, i] = cur_mat[row, i] - min_num
-	#Step 4-3
+	#Add the element in marked_rows, which is also in marked_cols, to the minimum value obtained by Step 4–1
 	for row in range(len(cover_rows)):  
 		for col in range(len(cover_cols)):
 			cur_mat[cover_rows[row], cover_cols[col]] = cur_mat[cover_rows[row], cover_cols[col]] + min_num
 	return cur_mat
 
 def hungarian_algorithm(mat): 
+	'''
+	Calculates the ideal task assignment for a given cost matrix
+	'''
 	dim = mat.shape[0]
 	cur_mat = mat
 
@@ -107,7 +116,7 @@ def hungarian_algorithm(mat):
 		cur_mat[:,col_num] = cur_mat[:,col_num] - np.min(cur_mat[:,col_num])
 	zero_count = 0
 	while zero_count < dim:
-		#Step 2 & 3
+		#Use min_zero_row and mark_matrix to identify an optimal solution
 		ans_pos, marked_rows, marked_cols = mark_matrix(cur_mat)
 		zero_count = len(marked_rows) + len(marked_cols)
 
@@ -117,6 +126,9 @@ def hungarian_algorithm(mat):
 	return ans_pos
 
 def ans_calculation(mat, pos):
+	'''
+	Calculates the optimal path as a sum of costs and a solution matrix
+	'''
 	total = 0
 	ans_mat = np.zeros((mat.shape[0], mat.shape[1]))
 	for i in range(len(pos)):
