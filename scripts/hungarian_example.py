@@ -1,3 +1,5 @@
+""" This script holds the functions for optimal task assignment """
+
 import numpy as np
 
 def min_zero_row(zero_mat, mark_zero):

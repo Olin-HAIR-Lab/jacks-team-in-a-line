@@ -1,3 +1,6 @@
+""" This script holds the functions used in the ground control system"""
+
+
 import numpy as np
 import matplotlib.pyplot as plt
 import time

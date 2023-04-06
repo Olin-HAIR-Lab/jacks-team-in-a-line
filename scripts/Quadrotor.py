@@ -1,3 +1,5 @@
+""" This script holds the functions for controlling the crazyflies """
+
 import numpy as np
 from math import sin, cos
 from scripts.utils import State, Position, VelCommand
@@ -130,6 +132,7 @@ class Quadrotor():
                             symbol='circle'))
 
     def update(self):
+        """Commands the drone to go to the next step of its path"""
         if self._path_index + 1 < len(self._path):
             self._path_index += 1
             next_pos = self._path[self._path_index]
@@ -172,6 +175,7 @@ class Quadrotor():
 
 
     def position_setpoint_hw(self, pos_cmd):
+        """calls the Position commander module to send position setpoint packets to the Crazyflie"""
         cf = self.scf.cf
         cf.commander.send_position_setpoint(pos_cmd[0],
                                             pos_cmd[1],
@@ -180,6 +184,7 @@ class Quadrotor():
 
 
     def path_complete(self):
+        """Checks if a drone has reached the end of it's path"""
         if len(self._path) < 1:
             return True
         dist_thr = 0.05
@@ -188,33 +193,39 @@ class Quadrotor():
         return True if np.linalg.norm(point1-point2) < dist_thr else False
     
     def log_pos_callback(self, timestamp, data, logconf):
+        """Logs drone position"""
         self._state.x_pos = data['stateEstimate.x']
         self._state.y_pos = data['stateEstimate.y']
         self._state.z_pos = data['stateEstimate.z']
 
 
     def log_orient_callback(self, timestamp, data, logconf):
+        """Logs drone orientation"""
         self._state.phi = data['stabilizer.roll']
         self._state.theta = data['stabilizer.pitch']
         self._state.psi = data['stabilizer.yaw']
 
     
     def log_range_callback(self, timestamp, data, logconf):
+        """Logs drone rangefinder readings"""
         self.range_left = data['range.left']
         self.range_right = data['range.right']
         self.range_front = data['range.front']
         self.range_back = data['range.back']
 
     def clear_tasks_and_path(self):
+        """Resets the drone's tasks and paths"""
         self._task_queue = []
         self._task_to_plan = ""
         self._path = []
         self._path_index = 0
 
     def available_for_task(self):
+        """Check if there is room in the drone's task queue for another task."""
         return len(self._task_queue) <= 3
 
     def add_task(self, task):
+        """Add a task to the drone's queue"""
         self._task_queue.append(task)
         self._task_to_plan = task.id
     
@@ -245,6 +256,7 @@ class Quadrotor():
         return
 
     def take_off(self):
+        """Commands the drone to begin flying"""
         if self._hardware_flag:
             self.mc.take_off(height=self._take_off_height)
             print(f'Agent [{self._id}] is Taking Off!!')
@@ -259,6 +271,7 @@ class Quadrotor():
 
 
     def land(self):
+        """Commands the drone to stop flying"""
         if self._hardware_flag:
             self.mc.land()
             print(f'Agent [{self._id}] is Landing!!')
@@ -272,12 +285,14 @@ class Quadrotor():
 
 
     def update_state_trace(self):
+        """Update the visualization of the drone path"""
         self._x_track.append(self._state.x_pos)
         self._y_track.append(self._state.y_pos)
         self._z_track.append(self._state.z_pos)
 
 
     def reset_estimator(self):
+        """Resets the kalmal filter on the state estimator"""
         cf = self.scf.cf
         cf.param.set_value('kalman.resetEstimation', '1')
         time.sleep(0.1)
@@ -287,6 +302,7 @@ class Quadrotor():
 
 
     def wait_for_position_estimator(self):
+        """Checks if the drone position is being tracked by the lighthouses"""
         # print('Waiting for estimator to find position...')
         print(f'Agent [{self._id}] | Waiting for estimator to find position...') 
 
@@ -330,6 +346,7 @@ class Quadrotor():
 
 
     def FlowDeckCheck(self, name, value_str):
+        """Checks if a flowdeck is attached"""
         value = int(value_str)
         # print(value)
         if value:
