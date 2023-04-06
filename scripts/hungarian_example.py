@@ -110,7 +110,7 @@ def hungarian_algorithm(mat):
 	dim = mat.shape[0]
 	cur_mat = mat
 
-	#Step 1 - Every column and every row subtract its internal minimum
+	#Every column and every row subtract its internal minimum
 	for row_num in range(mat.shape[0]): 
 		cur_mat[row_num] = cur_mat[row_num] - np.min(cur_mat[row_num])
 	
