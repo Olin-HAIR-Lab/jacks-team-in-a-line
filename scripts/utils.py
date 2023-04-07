@@ -217,4 +217,5 @@ def print_info(loop_time):
 
 
 def dist(a, b):
+    """Calculates the euclidian distance between 2 points"""
     return np.sqrt((a.x-b.x)**2 + (a.y-b.y)**2)

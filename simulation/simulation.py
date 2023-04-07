@@ -21,10 +21,12 @@ class Simulation():
 
 
     def add_agents(self, agent_list):
+        """Adds agents to the simulation"""
         self._agent_list = agent_list
 
 
     def set_task_list(self, task_list):
+        """adds tasks to the simulation"""
         self._task_list = task_list
 
     

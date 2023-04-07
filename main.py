@@ -104,10 +104,11 @@ if __name__ == '__main__':
     
 
     
-    while loop_i < 20:
+    while True:
+        # update the drone for it's next step
         gcs.update()
-
+        # create a map of where the drone has gone
         gcs.set_task_graph(draw=True)
-
+        #get tasks for task assignment
         task_assignment = gcs.get_task_assignment(draw=True)
     
