@@ -3,7 +3,7 @@ import matplotlib.pyplot as plt
 import time
 import networkx as nx
 from a_star import astar
-from generate_map import base_map
+from generate_map import base_map, to_astar
 
 class GroundControlSystem():
     def __init__(self, agent_list=None, task_list=None, env=None):
@@ -17,7 +17,7 @@ class GroundControlSystem():
         self._completed_tasks = dict()
 
         self._map = base_map(env)
-        print(self._map)
+        # print(self._map)
 
     def update(self):
         for agent_id, agent in self._agent_list.items():
@@ -40,15 +40,16 @@ class GroundControlSystem():
             agent = self._agent_list[agent_id]
             if agent._task_to_plan:
                 task = self._task_list[agent._task_to_plan]
-                agent_pos = (agent.get_pos().x, agent.get_pos().y)
-                pick_loc = (task.pick_loc.x, task.pick_loc.y)
-                drop_loc = (task.drop_loc.x, task.drop_loc.y)
+                agent_pos = to_astar((agent.get_pos().x, agent.get_pos().y), self._env)
+                pick_loc = to_astar((task.pick_loc.x, task.pick_loc.y), self._env)
+                drop_loc = to_astar((task.drop_loc.x, task.drop_loc.y), self._env)
 
                 target_points = [agent_pos, pick_loc, drop_loc]
 
                 for loc_i in range(2):
-                    agent._path += (astar( \
-                    target_points[loc_i], target_points[loc_i + 1], self._map))
+                    agent._path += astar( \
+                    target_points[loc_i], target_points[loc_i + 1], self._map)
+                    # print(agent._path)
 
 
         # TODO: LRA* goes here or after the agent.update()?
@@ -56,7 +57,7 @@ class GroundControlSystem():
         self.find_collisions()
 
         for agent in self._agent_list.values():
-            agent.update()   
+            agent.update()
         
         
         

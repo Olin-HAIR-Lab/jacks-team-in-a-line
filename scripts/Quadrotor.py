@@ -133,7 +133,8 @@ class Quadrotor():
         if self._path_index + 1 < len(self._path):
             self._path_index += 1
             next_pos = self._path[self._path_index]
-            pos_setpoint = [next_pos.x_pos, next_pos.y_pos, next_pos.z_pos, next_pos.phi]
+            # kinda a fucky fix for the time being but yes
+            pos_setpoint = [next_pos[1], next_pos[0], .5, 0]
             if self._hardware_flag:
                 self.position_setpoint_hw(pos_setpoint)
             else:

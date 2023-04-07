@@ -101,15 +101,13 @@ if __name__ == '__main__':
     gcs = GroundControlSystem(agent_list=agent_list, 
                             task_list=task_list,
                             env=env)
-
-
+    
 
     
-    while True:
+    while loop_i < 20:
         gcs.update()
 
         gcs.set_task_graph(draw=True)
 
         task_assignment = gcs.get_task_assignment(draw=True)
-
     
