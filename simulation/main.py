@@ -40,5 +40,5 @@ env = define_env(env["obstacles"])
 fig1 = go.Figure()
 fig2 = go.Figure()
 #Updates the simulation
-sim = Simulation(env = env, fig1 = fig1, fig2 = fig2)
+sim = Simulation(env = env, fig1 = fig1)
 sim.init_plot()

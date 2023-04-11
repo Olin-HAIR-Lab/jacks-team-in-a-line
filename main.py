@@ -3,6 +3,8 @@ from scripts.Quadrotor import Quadrotor
 from scripts.utils import Task, Position, State
 import time
 import yaml
+import plotly.graph_objects as go
+from simulation import Simulation
 
 if __name__ == '__main__':
     # load configuration file from YAML file
@@ -103,12 +105,24 @@ if __name__ == '__main__':
                             env=env)
     
 
+    ##### SETUP FOR SIMLUATION
+    fig1 = go.Figure()
+    sim = Simulation(env = env, fig1 = fig1)
+    sim.add_agents(agent_list)
+    sim.set_task_list(task_list)
+    sim.init_plot()
+
     
-    while True:
+    i = 0
+    while i < 10:
         # update the drone for it's next step
         gcs.update()
         # create a map of where the drone has gone
         gcs.set_task_graph(draw=True)
         #get tasks for task assignment
         task_assignment = gcs.get_task_assignment(draw=True)
+
+        i += 1
     
+    
+    sim.update_plot()

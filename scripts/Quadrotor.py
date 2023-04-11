@@ -172,8 +172,8 @@ class Quadrotor():
 
 
     def position_setpoint_sim(self, pos_cmd):
-        self._state.x_pos = pos_cmd[0]
-        self._state.y_pos = pos_cmd[1]
+        self._state.x_pos = pos_cmd[1]
+        self._state.y_pos = pos_cmd[0]
         self._state.z_pos = pos_cmd[2]
         self._state.psi = pos_cmd[3]
 
