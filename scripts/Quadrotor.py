@@ -190,7 +190,7 @@ class Quadrotor():
             return True
         dist_thr = 0.05
         point1 = np.asarray([self._state.x_pos, self._state.y_pos, self._state.z_pos])
-        point2 = np.asarray([self._path[-1].x, self._path[-1].y, self._path[-1].z])
+        point2 = np.asarray([self._path[-1][1], self._path[-1][0], .5])
         return True if np.linalg.norm(point1-point2) < dist_thr else False
     
     def log_pos_callback(self, timestamp, data, logconf):

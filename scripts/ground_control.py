@@ -6,7 +6,7 @@ import matplotlib.pyplot as plt
 import time
 import networkx as nx
 from a_star import astar
-from generate_map import base_map, to_astar
+from generate_map import base_map, to_astar, from_astar
 
 class GroundControlSystem():
     def __init__(self, agent_list=None, task_list=None, env=None):
@@ -50,8 +50,8 @@ class GroundControlSystem():
                 target_points = [agent_pos, pick_loc, drop_loc]
 
                 for loc_i in range(2):
-                    agent._path += astar( \
-                    target_points[loc_i], target_points[loc_i + 1], self._map)
+                    agent._path += from_astar(astar( \
+                    target_points[loc_i], target_points[loc_i + 1], self._map), self._env)
                     # print(agent._path)
 
 
@@ -361,19 +361,24 @@ class GroundControlSystem():
             all_hitboxes += self.get_hitbox(agent._path[agent._path_index])
 
         agent_next_pos = [agent._path[agent._path_index + 1] for agent in self._agent_list.values()]
+        # print(f"agent_next_pos: {agent_next_pos}")
 
         duplicates = [x for x in all_hitboxes if all_hitboxes.count(x) > 1]
         # print(f"duplicates: {duplicates}")
         drone_points = [point for point in list(agent_next_pos)\
                     if point in duplicates]
+        print(f"drone points: {drone_points}")
         # print(f"overlap: {drone_points}")
         bad_agents = [list(agent_next_pos).index(o) for o in drone_points]
+        print(f"bad agents: {bad_agents}")
 
         # is it good code? no. but that's okay
         fixed_pairs = []
 
         for agent_a in bad_agents:
+            print(f"agent a: {agent_a}")
             for agent_b in bad_agents:
+                print(f"agent b: {agent_b}")
                 if {agent_a, agent_b} not in fixed_pairs and \
                 agent_a != agent_b and \
                 (agent_next_pos[agent_a] in self.get_hitbox(agent_next_pos[agent_b]) or \
