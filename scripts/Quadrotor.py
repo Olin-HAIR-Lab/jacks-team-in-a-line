@@ -133,6 +133,9 @@ class Quadrotor():
 
     def update(self):
         """Commands the drone to go to the next step of its path"""
+        # if self._path_index + 2 >= len(self._path):
+        #     self._path.append(self._path[-1])
+
         if self._path_index + 1 < len(self._path):
             self._path_index += 1
             next_pos = self._path[self._path_index]
@@ -192,11 +195,12 @@ class Quadrotor():
     def path_complete(self):
         """Checks if a drone has reached the end of it's path"""
         if len(self._path) < 1:
-            return True
-        dist_thr = 0.05
-        point1 = np.asarray([self._state.x_pos, self._state.y_pos, self._state.z_pos])
-        point2 = np.asarray([self._path[-1][1], self._path[-1][0], .5])
-        return True if np.linalg.norm(point1-point2) < dist_thr else False
+            return False
+        return self._path_index + 1 >= len(self._path)
+        # dist_thr = 0.05
+        # point1 = np.asarray([self._state.x_pos, self._state.y_pos, self._state.z_pos])
+        # point2 = np.asarray([self._path[-1][1], self._path[-1][0], .5])
+        # return True if np.linalg.norm(point1-point2) < dist_thr else False
     
     def log_pos_callback(self, timestamp, data, logconf):
         """Logs drone position"""
@@ -241,19 +245,25 @@ class Quadrotor():
     def get_task_to_plan(self):
         return self._task_to_plan
 
-    def remove_planned_task(self, task_id):
+    def remove_planned_task(self):
         self._task_to_plan = ""
     
     def set_path(self, path):
         self._path = path
 
     def add_to_path(self, new_path):
-        self._path = self._path.append(new_path)
+        self._path += new_path
 
     def get_next_pos(self):
         if self._path_index + 1 < len(self._path):
             return self._path[self._path_index + 1]
         return None
+
+    def get_path_end(self):
+        if self._path:
+            return self._path[-1]
+        else:
+            return (self.get_pos().y, self.get_pos().x)
 
     def get_pos(self):
         return Position(x=self._state.x_pos, y=self._state.y_pos, z=self._state.z_pos)

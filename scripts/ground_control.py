@@ -25,7 +25,9 @@ class GroundControlSystem():
     def update(self):
         for agent_id, agent in self._agent_list.items():
             if agent.path_complete():
+                end_point = agent.get_path_end()
                 agent.clear_tasks_and_path()
+                agent.add_to_path([agent.get_path_end()]*2)
             if agent.available_for_task() and agent_id not in self._available_agents:
                 self._available_agents.append(agent_id)
             elif not agent.available_for_task() and agent_id in self._available_agents:
@@ -33,37 +35,35 @@ class GroundControlSystem():
             
         self.assign_tasks()
 
-        # TODO: A* for each agent goes here
-        # A* uses agent.add_to_path() to add a sequence of TrajPoints to agent._path (see utils.py)
-        # All tasks assigned to an agent are stored in agent._task_queue, accessible with agent.get_task_queue()
-        # Tasks ids that haven't been planned yet are stored in agent._task_to_plan (USE THIS ONE TO NOT DOUBLE PLAN PATHS)
-        # Remove task ID from task_to_plan with agent.remove_planned_task() after A* path has been added
-
         for agent_id in self._available_agents:
             agent = self._agent_list[agent_id]
-            if agent._task_to_plan:
-                task = self._task_list[agent._task_to_plan]
-                agent_pos = to_astar((agent.get_pos().x, agent.get_pos().y), self._env)
+            if agent.get_task_to_plan():
+                task = self._task_list[agent.get_task_to_plan()]
+                agent_pos = to_astar((agent.get_path_end()[1], agent.get_path_end()[0]), self._env)
                 pick_loc = to_astar((task.pick_loc.x, task.pick_loc.y), self._env)
                 drop_loc = to_astar((task.drop_loc.x, task.drop_loc.y), self._env)
 
                 target_points = [agent_pos, pick_loc, drop_loc]
 
+                raw_path = []
                 for loc_i in range(2):
-                    agent._path += from_astar(astar( \
-                    target_points[loc_i], target_points[loc_i + 1], self._map), self._env)
+                    astar_path = astar(target_points[loc_i], target_points[loc_i + 1], self._map)
+
+                    raw_path += astar_path
+
+                    agent.add_to_path(from_astar(astar_path, self._env))
+                    agent.remove_planned_task()
                     # print(agent._path)
 
-
-        # TODO: LRA* goes here or after the agent.update()?
+                # plt.plot([a[1] for a in raw_path], [a[0] for a in raw_path])
+                # plt.xlim([0, 30])
+                # plt.ylim([0, 20])
+                # plt.show()
 
         self.find_collisions()
 
         for agent in self._agent_list.values():
             agent.update()
-        
-        
-        
     
     def assign_tasks(self):
         if len(self._available_agents) < 1 or len(self._task_queue) < 1:
