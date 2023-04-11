@@ -34,6 +34,6 @@ def from_astar(path, env):
     new_path = []
     if path is not None:
         for point in path:
-            new_path.append((((point[1] + x_min) / 10), ((point[0] + y_min) / 10)))
+            new_path.append((((point[0] + x_min) / 10), ((point[1] + y_min) / 10)))
     
     return new_path
