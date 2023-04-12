@@ -114,7 +114,7 @@ if __name__ == '__main__':
 
     
     i = 0
-    while i < 50:
+    while i < 65:
         # update the drone for it's next step
         gcs.update()
         # create a map of where the drone has gone

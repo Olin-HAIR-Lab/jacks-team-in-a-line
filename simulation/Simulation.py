@@ -1,5 +1,6 @@
 from numpy import *
-
+import pandas as pd
+import plotly.express as px
 
 class Simulation():
 
@@ -33,6 +34,24 @@ class Simulation():
 
     def update_plot(self):
         """updates the plotly 2D and 3D with drone traces"""
+
+        agent_traces = {'agent_id': [],
+                        'step': [],
+                        'x': [],
+                        'y': [],
+                        'size': 10}
+        for agent in self._agent_list.values():
+            agent_traces['agent_id'] += [agent._id]*len(agent._x_track)
+            agent_traces['step'] += list(range(len(agent._x_track)))
+            agent_traces['x'] += agent._x_track
+            agent_traces['y'] += agent._y_track
+            
+        df = pd.DataFrame(data=agent_traces)
+
+        fig = px.scatter(df, x='x', y='y', animation_frame='step', animation_group='agent_id', color='agent_id', size='size',
+                         range_x=[-1, 2], range_y=[-1, 1])
+        fig.show()
+        
         # plot all the agents
         for agent in self._agent_list.values():
             self._ply_fig1.add_scatter(x=agent._x_track, y=agent._y_track, mode='lines+markers',
@@ -45,6 +64,7 @@ class Simulation():
             #                             marker=dict(size=3, symbol='circle'))
 
         self._ply_fig1.show()
+
         # self._ply_fig2.show()
 
 
