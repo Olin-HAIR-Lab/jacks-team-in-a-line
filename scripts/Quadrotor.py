@@ -259,6 +259,14 @@ class Quadrotor():
             return self._path[self._path_index + 1]
         return None
 
+    def get_path_length(self):
+        """
+        number of steps remaining in agent's path
+        """
+        if self._path_index + 1 < len(self._path):
+            return len(self._path)-self._path_index
+        return 1
+        
     def get_path_end(self):
         if self._path:
             return self._path[-1]
