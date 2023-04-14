@@ -3,10 +3,14 @@
 
 import numpy as np
 import matplotlib.pyplot as plt
+import math
 import time
 import networkx as nx
 from a_star import astar
 from generate_map import base_map, to_astar, from_astar
+from dataclasses import dataclass
+from Quadrotor import Quadrotor
+from utils import Task
 
 class GroundControlSystem():
     def __init__(self, agent_list=None, task_list=None, env=None):
@@ -393,3 +397,67 @@ class GroundControlSystem():
         self.find_collisions()
         for agent in self._agent_list.values():
             agent._path_index += 1'''
+    
+@dataclass
+class Heuristic:
+    """
+    Represents the cost of assigning an agent to a task.
+
+    Attributes:
+        agent (Quadrotor): Agent with preexisting path and tasks.
+        task (Task): The task object being assigned.
+        dist_weight (float): weighting of the distance drone will 
+            cover before reaching pick loc (incl current path)
+        time_weight (float): weighting of the time since task assigned
+        priority_weight (int): weighting of task priority
+
+    Methods:
+        steps_left_in_path: returns steps left in currently held path
+        path_end_loc: returns position (x y z) of the last path point
+        get_euclidian_distance: returns manhattan distance between 2 points
+        cost: uses scaling factors to generate a weighted cost
+        __float__(): Returns the cost as an float AUTOMATICALLY TRIGGERED 
+            ON NUMERICAL COMPARISONS OF CLASS OBJ, CAN BE USED AS VALUE.
+
+        
+    """
+    agent : Quadrotor
+    task : Task
+    dist_weight : float = 1
+    time_weight : float = .05
+    priority_weight : int = 10
+    # unsure about priority weighting, may cause problems
+
+    def steps_left_in_path(self):
+        return self.agent.get_path_length()
+    def path_end_loc(self):
+        return self.agent.get_path_end()
+    def get_euclidian_distance(self, pos_1,pos_2):
+        """
+        Takes in 2 positions as 3 element lists [x,y,z] and finds the euclidian (manhattan) distance between them 
+        """
+        x_dist= pos_1.x-pos_2.x
+        y_dist= pos_1.y-pos_2.y
+        z_dist= pos_1.z-pos_2.z
+        return math.sqrt(abs(x_dist)^2+abs(y_dist)^2+abs(z_dist)^2)
+    
+    def cost(self):
+        distance_from_path = self.get_euclidian_distance(self.path_end_loc(), self.task.pick_loc)
+        steps_left = self.steps_left_in_path()
+        total_distance = distance_from_path + steps_left
+        time = time.time - self.task.time_input
+        priority = self.task.priority * self.priority_weight
+
+        cost = total_distance - time + priority
+        return cost
+
+
+    def __float__(self):
+        """
+        method to allow for direct comparison of Heuristic values like floats!
+        """
+        return float(self.cost)
+    
+    
+    
+        
