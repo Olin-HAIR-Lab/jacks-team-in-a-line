@@ -27,7 +27,7 @@ class GroundControlSystem():
             if agent.path_complete():
                 end_point = agent.get_path_end()
                 agent.clear_tasks_and_path()
-                agent.add_to_path([agent.get_path_end()]*2)
+                agent.add_to_path([end_point]*2)
             if agent.available_for_task() and agent_id not in self._available_agents:
                 self._available_agents.append(agent_id)
             elif not agent.available_for_task() and agent_id in self._available_agents:
