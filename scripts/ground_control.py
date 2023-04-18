@@ -57,7 +57,7 @@ class GroundControlSystem():
 
                     agent.add_to_path(from_astar(astar_path, self._env))
                     agent.remove_planned_task()
-                    # print(agent._path)
+                print(agent._path)
 
                 # plt.plot([a[1] for a in raw_path], [a[0] for a in raw_path])
                 # plt.xlim([0, 30])
@@ -371,18 +371,18 @@ class GroundControlSystem():
         # print(f"duplicates: {duplicates}")
         drone_points = [point for point in list(agent_next_pos)\
                     if point in duplicates]
-        print(f"drone points: {drone_points}")
+        # print(f"drone points: {drone_points}")
         # print(f"overlap: {drone_points}")
         bad_agents = [list(agent_next_pos).index(o) for o in drone_points]
-        print(f"bad agents: {bad_agents}")
+        # print(f"bad agents: {bad_agents}")
 
         # is it good code? no. but that's okay
         fixed_pairs = []
 
         for agent_a in bad_agents:
-            print(f"agent a: {agent_a}")
+            # print(f"agent a: {agent_a}")
             for agent_b in bad_agents:
-                print(f"agent b: {agent_b}")
+                # print(f"agent b: {agent_b}")
                 if {agent_a, agent_b} not in fixed_pairs and \
                 agent_a != agent_b and \
                 (agent_next_pos[agent_a] in self.get_hitbox(agent_next_pos[agent_b]) or \
@@ -430,9 +430,11 @@ class Heuristic:
 
     def steps_left_in_path(self):
         return self.agent.get_path_length()
+    
     def path_end_loc(self):
         return self.agent.get_path_end()
-    def get_euclidian_distance(self, pos_1,pos_2):
+    
+    def get_euclidian_distance(self, pos_1, pos_2):
         """
         Takes in 2 positions as 3 element lists [x,y,z] and finds the euclidian (manhattan) distance between them 
         """
@@ -450,7 +452,6 @@ class Heuristic:
 
         cost = total_distance - time + priority
         return cost
-
 
     def __float__(self):
         """

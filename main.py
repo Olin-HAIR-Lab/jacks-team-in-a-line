@@ -113,6 +113,12 @@ if __name__ == '__main__':
     sim.init_plot()
 
     
+    for agent in agent_list.values():
+        agent.initialize_agent()
+
+    if use_hardware:
+        time.sleep(3)
+
     i = 0
     while i < 65:
         # update the drone for it's next step
@@ -123,6 +129,11 @@ if __name__ == '__main__':
         task_assignment = gcs.get_task_assignment(draw=False)
 
         i += 1
-    
+
+        if use_hardware:
+            time.sleep(time_delta)
+
+    for agent in agent_list.values():
+        agent.land()
     
     sim.update_plot()

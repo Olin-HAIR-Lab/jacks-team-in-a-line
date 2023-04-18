@@ -140,7 +140,7 @@ class Quadrotor():
             self._path_index += 1
             next_pos = self._path[self._path_index]
             # kinda a fucky fix for the time being but yes
-            pos_setpoint = [next_pos[1], next_pos[0], .5, 0]
+            pos_setpoint = [next_pos[1], next_pos[0], self._take_off_height, 0]
             if self._hardware_flag:
                 self.position_setpoint_hw(pos_setpoint)
             else:
@@ -196,7 +196,7 @@ class Quadrotor():
         """Checks if a drone has reached the end of it's path"""
         if len(self._path) < 1:
             return False
-        return self._path_index + 1 >= len(self._path)
+        return self._path_index >= len(self._path) - 1
         # dist_thr = 0.05
         # point1 = np.asarray([self._state.x_pos, self._state.y_pos, self._state.z_pos])
         # point2 = np.asarray([self._path[-1][1], self._path[-1][0], .5])
@@ -266,14 +266,6 @@ class Quadrotor():
         if self._path_index + 1 < len(self._path):
             return len(self._path)-self._path_index
         return 1
-
-    def get_path_length(self):
-        """
-        number of steps remaining in agent's path
-        """
-        if self._path_index + 1 < len(self._path):
-            return len(self._path)-self._path_index
-        return 1
         
     def get_path_end(self):
         if self._path:
@@ -299,7 +291,6 @@ class Quadrotor():
                 vel = VelCommand()
                 vel.vz = np.clip(self._K * (self._take_off_height - self._state.z_pos), -self._vz_max, self._vz_max)
                 self.velocity_setpoint_sim(vel)
-                time.sleep(self._time_delta)
 
 
     def land(self):
@@ -313,7 +304,6 @@ class Quadrotor():
                 vel = VelCommand()
                 vel.vz = np.clip(self._K * (-self._state.z_pos), -self._vz_max, self._vz_max)
                 self.velocity_setpoint_sim(vel)
-                time.sleep(self._time_delta)
 
 
     def update_state_trace(self):
