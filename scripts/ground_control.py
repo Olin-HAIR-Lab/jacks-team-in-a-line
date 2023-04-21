@@ -331,8 +331,8 @@ class GroundControlSystem():
         8 points immeditaely surrounding it (and the point itself)
         """
 
-        neighbors = [(0, -.1), (0, .1), (-.1, 0), (.1, 0), \
-                            (-.1, -.1), (.1, .1), (-.1, .1), (.1, -.1), (0,0)]
+        neighbors = [(0, -.1), (0, .1), (-.1, 0), (.1, 0), (0,0), \
+                            (-.1, -.1), (.1, .1), (-.1, .1), (.1, -.1)]
         hitbox = [tuple(map(sum, zip(pos, n))) for n in neighbors]
         hitbox.append(pos)
         return hitbox
@@ -347,13 +347,20 @@ class GroundControlSystem():
         for agent in self._agent_list.values():
             print(agent._path)
     
-    def _fix_collision(self, agent):
+    def _fix_collision(self, agent_a, agent_b):
         """
-        Given agent waits one timestep before continuing to move by inserting
-        a repeat of it's current position as the next step in the list
+        Given agent moves one step left of it's current position as the next step in the list
         """
-        print("fixing")
-        agent._path.insert(agent._path_index + 1, agent._path[agent._path_index])
+        a_pos = agent_a._path[agent_a._path_index]
+        a_next_pos = agent_a.next_pos
+        b_pos = agent_b._path[agent_b._path_index]
+        b_next_pos = agent_b.next_pos
+        a_next_pos = (a_pos[0],a_pos[1])
+        if b_next_pos == a_pos:
+            dy=b_pos[0]-a_pos[0]
+            dx=b_pos[1]-a_pos[1]
+            a_next_pos = (a_pos[0]+dx,a_pos[1]+dy)
+        agent_a._path.insert(agent_a._path_index+1, a_next_pos)
 
     
     def find_collisions(self):
@@ -361,15 +368,16 @@ class GroundControlSystem():
         Find all potential collisions in the drones' next moves and then
         preferbaly don't collide pls :D
         """
-        all_hitboxes = []
-        # find all the hitboxes and adds the points to all_hitboxes list
-        for agent in self._agent_list.values():
-            all_hitboxes += self.get_hitbox(agent._path[agent._path_index])
 
         for agent in self._agent_list.values():
             agent.next_pos = agent._path[agent._path_index + 1]
             # print(agent.next_pos)
         # agent_next_pos = [agent._path[agent._path_index + 1] for agent in self._agent_list.values()]
+
+        all_hitboxes = []
+        # find all the hitboxes and adds the points to all_hitboxes list
+        for agent in self._agent_list.values():
+            all_hitboxes += self.get_hitbox(agent.next_pos)
 
         duplicates = [x for x in all_hitboxes if all_hitboxes.count(x) > 1]
         # print(f"duplicates: {duplicates}")
@@ -389,9 +397,13 @@ class GroundControlSystem():
                 # print(f"agent b: {agent_b}")
                 if {agent_a, agent_b} not in fixed_pairs and \
                 agent_a._id != agent_b._id and \
-                ((agent_a.next_pos in self.get_hitbox(agent_b.next_pos) or \
-                agent_b.next_pos in self.get_hitbox(agent_a.next_pos))):
-                    self._fix_collision(agent_b)
+                agent_b.next_pos in self.get_hitbox(agent_a.next_pos):
+                    self._fix_collision(agent_b,agent_a)
+                    fixed_pairs.append({agent_a, agent_b})
+                if {agent_a, agent_b} not in fixed_pairs and \
+                agent_a._id != agent_b._id and \
+                agent_a.next_pos in self.get_hitbox(agent_b.next_pos):
+                    self._fix_collision(agent_a,agent_b)
                     fixed_pairs.append({agent_a, agent_b})
                     
     '''def go_and_dont_crash(self):
