@@ -29,9 +29,16 @@ class GroundControlSystem():
     def update(self):
         for agent_id, agent in self._agent_list.items():
             if agent.path_complete():
-                end_point = agent.get_path_end()
-                agent.clear_tasks_and_path()
-                agent.add_to_path([end_point]*2)
+                if not agent.at_base_station():
+                    end_point = to_astar(agent.get_path_end(), self._env)
+                    start_loc = to_astar((agent.get_base_station().x, agent.get_base_station().y), self._env)
+                    return_path = astar(end_point, start_loc, self._map)
+                    agent.clear_tasks_and_path()
+                    agent.add_to_path(from_astar(return_path, self._env))
+                    agent.add_to_path([(agent.get_base_station().x, agent.get_base_station().y)]*2)
+                else:
+                    agent.clear_tasks_and_path()
+                    agent.add_to_path([(agent.get_base_station().x, agent.get_base_station().y)]*2)
             if agent.available_for_task() and agent_id not in self._available_agents:
                 self._available_agents.append(agent_id)
             elif not agent.available_for_task() and agent_id in self._available_agents:
@@ -43,7 +50,7 @@ class GroundControlSystem():
             agent = self._agent_list[agent_id]
             if agent.get_task_to_plan():
                 task = self._task_list[agent.get_task_to_plan()]
-                agent_pos = to_astar((agent.get_path_end()[1], agent.get_path_end()[0]), self._env)
+                agent_pos = to_astar(agent.get_path_end(), self._env)
                 pick_loc = to_astar((task.pick_loc.x, task.pick_loc.y), self._env)
                 drop_loc = to_astar((task.drop_loc.x, task.drop_loc.y), self._env)
 

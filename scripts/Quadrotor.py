@@ -31,6 +31,9 @@ class Quadrotor():
         # initialize state
         self._state = init_state
 
+        # Store start location
+        self._base_station = Position(x= self._state.x_pos, y=self._state.y_pos, z=self._state.z_pos)
+
         # set trajectory track
         self._x_track = []
         self._y_track = []
@@ -143,7 +146,7 @@ class Quadrotor():
             self._path_index += 1
             next_pos = self._path[self._path_index]
             # kinda a fucky fix for the time being but yes
-            pos_setpoint = [next_pos[1], next_pos[0], self._take_off_height, 0]
+            pos_setpoint = [next_pos[0], next_pos[1], self._take_off_height, 0]
             if self._hardware_flag:
                 self.position_setpoint_hw(pos_setpoint)
             else:
@@ -193,17 +196,6 @@ class Quadrotor():
                                             pos_cmd[1],
                                             pos_cmd[2],
                                             pos_cmd[3])
-
-
-    def path_complete(self):
-        """Checks if a drone has reached the end of it's path"""
-        if len(self._path) < 1:
-            return False
-        return self._path_index >= len(self._path) - 1
-        # dist_thr = 0.05
-        # point1 = np.asarray([self._state.x_pos, self._state.y_pos, self._state.z_pos])
-        # point2 = np.asarray([self._path[-1][1], self._path[-1][0], .5])
-        # return True if np.linalg.norm(point1-point2) < dist_thr else False
     
     def log_pos_callback(self, timestamp, data, logconf):
         """Logs drone position"""
@@ -235,7 +227,21 @@ class Quadrotor():
 
     def available_for_task(self):
         """Check if there is room in the drone's task queue for another task."""
-        return len(self._task_queue) <= 3
+        return len(self._task_queue) < 3
+    
+    def path_complete(self):
+        """Checks if a drone has reached the end of it's path"""
+        if len(self._path) < 1:
+            return False
+        return self._path_index >= len(self._path) - 1
+    
+    def at_base_station(self):
+        """Checks if drone is at the base station"""
+        return self._path[self._path_index] == (self._base_station.x, self._base_station.y)
+    
+    def get_base_station(self):
+        """Returns position of drone's base station (start location)"""
+        return self._base_station
 
     def add_task(self, task):
         """Add a task to the drone's queue"""
@@ -274,7 +280,7 @@ class Quadrotor():
         if self._path:
             return self._path[-1]
         else:
-            return (self.get_pos().y, self.get_pos().x)
+            return (self.get_pos().x, self.get_pos().y)
 
     def get_pos(self):
         return Position(x=self._state.x_pos, y=self._state.y_pos, z=self._state.z_pos)

@@ -4,13 +4,14 @@ import plotly.express as px
 
 class Simulation():
 
-    def __init__(self, env=None, fig1=None, fig2=None):
+    def __init__(self, env=None, fig1=None, fig2=None, fig_animated=None):
         self._agent_list = None
         self._task_list = None
         self._env = env
 
         self._ply_fig1 = fig1
         self._ply_fig2 = fig2
+        self._ply_fig_animated = fig_animated
 
 
     def add_agents(self, agent_list):
@@ -24,7 +25,7 @@ class Simulation():
     def init_plot(self):
         """creates the plotly 2D and 3D plots"""
         # 2D plot
-        self.create_2D_plot()
+        self.create_2D_plot(self._ply_fig1)
         self._ply_fig1.show()
 
         # 3D plot
@@ -39,18 +40,24 @@ class Simulation():
                         'step': [],
                         'x': [],
                         'y': [],
-                        'size': 10}
+                        'size': 1}
+        agent_colors = []
         for agent in self._agent_list.values():
             agent_traces['agent_id'] += [agent._id]*len(agent._x_track)
             agent_traces['step'] += list(range(len(agent._x_track)))
             agent_traces['x'] += agent._x_track
             agent_traces['y'] += agent._y_track
+            agent_colors.append(agent._color)
             
         df = pd.DataFrame(data=agent_traces)
 
-        fig = px.scatter(df, x='x', y='y', animation_frame='step', animation_group='agent_id', color='agent_id', size='size',
-                         range_x=[-1, 2], range_y=[-1, 1])
-        fig.show()
+        self._ply_fig_animated = px.scatter(df, x='x', y='y', animation_frame='step', animation_group='agent_id',
+                                            color='agent_id', color_discrete_sequence=agent_colors,
+                                            range_x=[-1, 2], range_y=[-1, 1])
+        
+        self._ply_fig_animated.update_traces(marker=dict(size=15, symbol='circle'))
+        self.create_2D_plot(self._ply_fig_animated)
+        self._ply_fig_animated.show()
         
         # plot all the agents
         for agent in self._agent_list.values():
@@ -68,7 +75,7 @@ class Simulation():
         # self._ply_fig2.show()
 
 
-    def create_2D_plot(self):
+    def create_2D_plot(self, fig):
         """creates 2D plot showing obstacles, agent start locations and task locations"""
         map_x = []
         map_y = []
@@ -79,17 +86,17 @@ class Simulation():
             map_x.append(obstacles[i][0]/10)
             map_y.append(obstacles[i][1]/10)
 
-        self._ply_fig1.add_scatter(x=map_x, y=map_y, mode='markers',
+        fig.add_scatter(x=map_x, y=map_y, mode='markers',
                                    marker=dict(color='LightSkyBlue', size=20),
                                    showlegend=False)
 
 
         # plot agent start locations
         for agent in self._agent_list.values():        
-            self._ply_fig1.add_scatter(x=[agent.get_pos().x], y=[agent.get_pos().y], mode='markers',
+            fig.add_scatter(x=[agent.get_pos().x], y=[agent.get_pos().y], mode='markers',
                                     marker=dict(color=agent._color, size=15,  
                                     symbol='arrow-right'),
-                                    name=agent._id)
+                                    name=f"{agent._id} Base Station")
             
         # plot pick and drop locations
         pick_x, pick_y, drop_x, drop_y = [], [], [], []
@@ -99,17 +106,17 @@ class Simulation():
             drop_x.append(t.drop_loc.x)
             drop_y.append(t.drop_loc.y)
         
-        self._ply_fig1.add_scatter(x=pick_x, y=pick_y, mode='markers',
+        fig.add_scatter(x=pick_x, y=pick_y, mode='markers',
                                 marker=dict(color='Red', size=15),
                                 name="Pick locations")
-        self._ply_fig1.add_scatter(x=drop_x, y=drop_y, mode='markers',
+        fig.add_scatter(x=drop_x, y=drop_y, mode='markers',
                                 marker=dict(color='DarkGreen', size=15,
                                             symbol='square'),
                                             name="Drop locations")
 
-        self._ply_fig1.update_xaxes(range=[-1,2.2],
+        fig.update_xaxes(range=[-1,2.2],
                                    constrain="domain")
-        self._ply_fig1.update_yaxes(range=[-1,1.2],
+        fig.update_yaxes(range=[-1,1.2],
                                    scaleanchor="x",
                                    scaleratio=1)
 

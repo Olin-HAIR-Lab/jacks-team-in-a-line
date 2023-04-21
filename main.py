@@ -59,6 +59,20 @@ if __name__ == '__main__':
     print('Agent List (with home position)')
     print('----------------------------------')
 
+    # Plotly colors
+    colors = [
+        '#1f77b4',  # muted blue
+        '#ff7f0e',  # safety orange
+        '#2ca02c',  # cooked asparagus green
+        '#d62728',  # brick red
+        '#9467bd',  # muted purple
+        '#8c564b',  # chestnut brown
+        '#e377c2',  # raspberry yogurt pink
+        '#7f7f7f',  # middle gray
+        '#bcbd22',  # curry yellow-green
+        '#17becf'   # blue-teal
+    ]   
+
     agent_list = dict()
     for i in range(num_agents):
         # define initial state
@@ -68,7 +82,7 @@ if __name__ == '__main__':
         uri = 'radio://0/'+agent_init[i][0][2:]+'0/2M/E7E7E7E7E7'
         # define agent as Quadrotor
         agent = Quadrotor(init_state=start, 
-                        color=None, 
+                        color=colors[i], 
                         id=agent_init[i][0], 
                         uri=uri,
                         take_off_height=agent_init[i][2], 
@@ -107,7 +121,8 @@ if __name__ == '__main__':
 
     ##### SETUP FOR SIMLUATION
     fig1 = go.Figure()
-    sim = Simulation(env = env, fig1 = fig1)
+    fig_animated = go.Figure()
+    sim = Simulation(env = env, fig1 = fig1, fig_animated=fig_animated)
     sim.add_agents(agent_list)
     sim.set_task_list(task_list)
     sim.init_plot()
@@ -120,7 +135,7 @@ if __name__ == '__main__':
         time.sleep(3)
 
     i = 0
-    while i < 65:
+    while i < 100:
         # update the drone for it's next step
         gcs.update()
         # create a map of where the drone has gone
