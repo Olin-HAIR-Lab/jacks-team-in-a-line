@@ -331,8 +331,8 @@ class GroundControlSystem():
         8 points immeditaely surrounding it (and the point itself)
         """
 
-        neighbors = [(0, -1), (0, 1), (-1, 0), (1, 0), \
-                            (-1, -1), (1, 1), (-1, 1), (1, -1)]
+        neighbors = [(0, -.1), (0, .1), (-.1, 0), (.1, 0), \
+                            (-.1, -.1), (.1, .1), (-.1, .1), (.1, -.1), (0,0)]
         hitbox = [tuple(map(sum, zip(pos, n))) for n in neighbors]
         hitbox.append(pos)
         return hitbox
@@ -352,7 +352,9 @@ class GroundControlSystem():
         Given agent waits one timestep before continuing to move by inserting
         a repeat of it's current position as the next step in the list
         """
+        print("fixing")
         agent._path.insert(agent._path_index + 1, agent._path[agent._path_index])
+
     
     def find_collisions(self):
         """
@@ -360,33 +362,35 @@ class GroundControlSystem():
         preferbaly don't collide pls :D
         """
         all_hitboxes = []
-        # find all the hitboxes
+        # find all the hitboxes and adds the points to all_hitboxes list
         for agent in self._agent_list.values():
             all_hitboxes += self.get_hitbox(agent._path[agent._path_index])
 
-        agent_next_pos = [agent._path[agent._path_index + 1] for agent in self._agent_list.values()]
-        # print(f"agent_next_pos: {agent_next_pos}")
+        for agent in self._agent_list.values():
+            agent.next_pos = agent._path[agent._path_index + 1]
+            # print(agent.next_pos)
+        # agent_next_pos = [agent._path[agent._path_index + 1] for agent in self._agent_list.values()]
 
         duplicates = [x for x in all_hitboxes if all_hitboxes.count(x) > 1]
         # print(f"duplicates: {duplicates}")
-        drone_points = [point for point in list(agent_next_pos)\
-                    if point in duplicates]
-        # print(f"drone points: {drone_points}")
-        # print(f"overlap: {drone_points}")
-        bad_agents = [list(agent_next_pos).index(o) for o in drone_points]
+        bad_agents = []
+        for agent in self._agent_list.values():
+            if agent.next_pos in duplicates:
+                bad_agents.append(agent)
+
         # print(f"bad agents: {bad_agents}")
 
         # is it good code? no. but that's okay
         fixed_pairs = []
 
         for agent_a in bad_agents:
-            # print(f"agent a: {agent_a}")
+            # print(f"bad agent a: {agent_a}")
             for agent_b in bad_agents:
                 # print(f"agent b: {agent_b}")
                 if {agent_a, agent_b} not in fixed_pairs and \
-                agent_a != agent_b and \
-                (agent_next_pos[agent_a] in self.get_hitbox(agent_next_pos[agent_b]) or \
-                agent_next_pos[agent_b] in self.get_hitbox(agent_next_pos[agent_a])):
+                agent_a._id != agent_b._id and \
+                ((agent_a.next_pos in self.get_hitbox(agent_b.next_pos) or \
+                agent_b.next_pos in self.get_hitbox(agent_a.next_pos))):
                     self._fix_collision(agent_b)
                     fixed_pairs.append({agent_a, agent_b})
                     

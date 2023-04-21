@@ -45,6 +45,9 @@ class Quadrotor():
         self._path = []
         self._path_index = 0
 
+        # Used for LRA*
+        self.next_pos=(0,0)
+
         # set up system
         # get/set simulation parameters
         self._time_delta = dt
