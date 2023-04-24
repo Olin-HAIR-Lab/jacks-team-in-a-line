@@ -5,17 +5,39 @@ import time
 import yaml
 import plotly.graph_objects as go
 from simulation.Simulation import Simulation
+from itertools import product
+
+def define_env(map):
+    """
+    Take in the two corners of rectangles from the yaml file
+    and define all the points as obstacles
+    """
+    env = map
+    corners = map["obstacles"]
+    obstacles = []
+
+    x_vals = []
+    y_vals = []
+    for pair in corners:
+        x_vals += [x for x in range(pair[0][0], pair[1][0] + 1)]
+        y_vals +=  [y for y in range(pair[0][1], pair[1][1] + 1)]
+        obstacles += product(x_vals, y_vals)
+ 
+    env['obstacles'] = list(set(obstacles))
+    return env
 
 if __name__ == '__main__':
     # load configuration file from YAML file
-    with open('./config.yaml', 'r') as file:
+    with open('./base_config.yaml', 'r') as file:
         config = yaml.load(file, Loader=yaml.FullLoader)
 
     use_hardware = config['use_hardware']
     agent_init = config['agent_init']
     colors = config['agent_colors']
     time_delta = config['time_delta']
-    env = config['map']
+    env_simplified = config['map'].copy()
+    print(env_simplified)
+    env = define_env(config['map'])
     num_agents = len(agent_init)
 
     print(f'Number of Agents: [{num_agents}] -> {[agent_init[i][0] for i in range(len(agent_init))]}')
@@ -121,8 +143,9 @@ if __name__ == '__main__':
 
     ##### SETUP FOR SIMLUATION
     fig1 = go.Figure()
+    fig2 = go.Figure()
     fig_animated = go.Figure()
-    sim = Simulation(env = env, fig1 = fig1, fig_animated=fig_animated)
+    sim = Simulation(env = env_simplified, fig1 = fig1, fig2 = fig2, fig_animated=fig_animated)
     sim.add_agents(agent_list)
     sim.set_task_list(task_list)
     sim.init_plot()
