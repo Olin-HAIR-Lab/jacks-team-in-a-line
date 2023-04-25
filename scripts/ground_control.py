@@ -7,8 +7,8 @@ import matplotlib.pyplot as plt
 import math
 import time
 import networkx as nx
-from a_star import astar
-from generate_map import base_map, to_astar, from_astar
+from scripts.a_star import astar
+from scripts.generate_map import base_map, to_astar, from_astar
 import math
 
 from scripts.Quadrotor import Quadrotor
