@@ -371,8 +371,9 @@ class GroundControlSystem():
             dy=b_pos[0]-a_pos[0]
             dx=b_pos[1]-a_pos[1]
             a_next_pos = (a_pos[0]+dx,a_pos[1]+dy)
-        agent_a._path.insert(agent_a._path_index+1, a_next_pos)
-        if agent_a._id=="CF5" or agent_a._id == "CF2":
+        else:
+            agent_a._path.insert(agent_a._path_index+1, a_next_pos)
+            #if agent_a._id=="CF5" or agent_a._id == "CF6":
             print("Waiting")
     
     def find_collisions(self):
@@ -413,7 +414,6 @@ class GroundControlSystem():
             if agent.next_pos in duplicates:
                 bad_agents.append(agent)
                 bad_agent_ids.append(agent._id)
-
 
         print(f"bad agents: {bad_agent_ids}")
         for agent_1 in self._agent_list.values():
