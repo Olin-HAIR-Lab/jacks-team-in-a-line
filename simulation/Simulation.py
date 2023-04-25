@@ -146,17 +146,18 @@ class Simulation():
 
         map_obstacles = []
         for obstacle in obstacles:
-            x0 = obstacle[0][0]
-            y0 = obstacle[0][1]
-            x1 = obstacle[1][0]
-            y1 = obstacle[1][1]
+            x0 = obstacle[0][0]/10
+            y0 = obstacle[0][1]/10
+            x1 = obstacle[1][0]/10
+            y1 = obstacle[1][1]/10
             map_obstacles.append([(x0, y0), (x1, y0), (x1, y1), (x0, y1)])
 
         for obstacle in map_obstacles:
-            obs_x = [p[0] for p in obstacle]*2
-            obs_y = [p[1] for p in obstacle]*2
-            obs_z = [0]*len(obstacle) + [0.6]*len(obstacle)
-            self._ply_fig2.add_mesh3d(x=obs_x, y=obs_y, z=obs_z)
+            obs_x = [p[0] for p in obstacle]
+            obs_y = [p[1] for p in obstacle]
+            for i in linspace(0,0.6,12):
+                obs_z = [i]*len(obstacle)
+                self._ply_fig2.add_mesh3d(x=obs_x, y=obs_y, z=obs_z, color='skyblue')
         
         # self._ply_fig2.add_scatter3d(x=map_x, y=map_y, z=map_z,
         #                             mode='markers', showlegend=False)
