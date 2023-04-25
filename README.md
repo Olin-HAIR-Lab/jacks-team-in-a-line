@@ -10,6 +10,12 @@ This project is an exploration of path planning and task allocation algorithms o
 - [NetworkX](https://networkx.org/documentation/stable/install.html)
 - [dataclasses](https://pypi.org/project/dataclasses/)
 
+## Installation
+To install and run the simulation, just download the repository and run `main.py`. 
+
+## Results
+To read more about our results, view our [paper](https://www.google.com/url?sa=t&rct=j&q=&esrc=s&source=web&cd=&cad=rja&uact=8&ved=2ahUKEwifgqaf7cX-AhV1KFkFHfbTCnIQtwJ6BAgPEAI&url=https%3A%2F%2Fwww.youtube.com%2Fwatch%3Fv%3Dq6EoRBvdVPQ&usg=AOvVaw0r0PqESuqJ32Hc15MSHJci) and [demo video](https://www.google.com/url?sa=t&rct=j&q=&esrc=s&source=web&cd=&cad=rja&uact=8&ved=2ahUKEwilltCT7cX-AhUTFVkFHds4AE0QwqsBegQIDRAE&url=https%3A%2F%2Fwww.youtube.com%2Fwatch%3Fv%3DdQw4w9WgXcQ&usg=AOvVaw0aHtehaphMhOCAkCydRLZU). 
+
 ## Contributors
 - [Grant Goodall](github.com/GrantGoodall)
 - [Jack Levitsky](github.com/jlevitsky)
