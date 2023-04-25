@@ -113,6 +113,9 @@ class Quadrotor():
             self.scf.cf.log.add_config(self.logconf_range)
             self.logconf_range.data_received_cb.add_callback(self.log_range_callback)
 
+    @property
+    def id(self):
+        return self._id
 
     def initialize_agent(self):
         """handles agent take off and logger initiation"""
@@ -235,6 +238,21 @@ class Quadrotor():
             return False
         return self._path_index >= len(self._path) - 1
     
+    def get_path_pos(self):
+        """Returns drone's current position in its path"""
+        if len(self._path) < 1:
+            return None
+        return self._path[self._path_index]
+
+    def get_next_pos(self):
+        """Returns next position of the drone according to its path"""
+        if self._path_index + 1 >= len(self._path):
+            return None
+        return self._path[self._path_index + 1]
+
+    def add_next_pos(self, pos):
+        self._path.insert(self._path_index + 1, pos)
+
     def at_base_station(self):
         """Checks if drone is at the base station"""
         return self._path[self._path_index] == (self._base_station.x, self._base_station.y)

@@ -113,7 +113,7 @@ class GroundControlSystem():
 
         print("Assignments: ")
         for assignment in self._task_assignment.items():
-            print(f"{assignment[0]._id}: {[a.id for a in assignment[1]]}")
+            print(f"{assignment[0].id}: {[a.id for a in assignment[1]]}")
         
         print("Remaining tasks: ")
         for task in self._task_queue:
@@ -125,7 +125,7 @@ class GroundControlSystem():
 
         # add agent start locations:
         for a in self._agent_list.values():
-            self.G.add_node(a._id, pos=(a.get_pos().x, a.get_pos().y))
+            self.G.add_node(a.id, pos=(a.get_pos().x, a.get_pos().y))
 
         # add pick and drop locations of tasks:
         for t in self._task_list.values():
@@ -153,10 +153,10 @@ class GroundControlSystem():
                         self.G.add_edge(task[i-1].drop_id, task[i].pick_id, color=colors[j])
                         self.G.add_edge(task[i].pick_id, task[i].drop_id, color=colors[j])
                     else:
-                        self.G.add_edge(agent._id, task[i].pick_id, color=colors[j])
+                        self.G.add_edge(agent.id, task[i].pick_id, color=colors[j])
                         self.G.add_edge(task[i].pick_id, task[i].drop_id, color=colors[j])
             else:
-                self.G.add_edge(agent._id, task.pick_id, color=colors[j])
+                self.G.add_edge(agent.id, task.pick_id, color=colors[j])
                 self.G.add_edge(task.pick_id, task.drop_id, color=colors[j])
             j+=1
         
@@ -361,10 +361,10 @@ class GroundControlSystem():
         """
         Given agent moves one step left of it's current position as the next step in the list
         """
-        a_pos = agent_a._path[agent_a._path_index]
-        a_next_pos = agent_a.next_pos
-        b_pos = agent_b._path[agent_b._path_index]
-        b_next_pos = agent_b.next_pos
+        a_pos = agent_a.get_path_pos()
+        a_next_pos = agent_a.get_next_pos()
+        b_pos = agent_b.get_path_pos()
+        b_next_pos = agent_b.get_next_pos()
         a_next_pos = (a_pos[0],a_pos[1])
         if b_next_pos == a_pos or a_next_pos == b_next_pos:
             print("PROBLEMO")
@@ -372,8 +372,8 @@ class GroundControlSystem():
             dx=b_pos[1]-a_pos[1]
             a_next_pos = (a_pos[0]+dx,a_pos[1]+dy)
         else:
-            agent_a._path.insert(agent_a._path_index+1, a_next_pos)
-            #if agent_a._id=="CF5" or agent_a._id == "CF6":
+            agent_a.add_next_pos(a_next_pos)
+            #if agent_a.id=="CF5" or agent_a.id == "CF6":
             print("Waiting")
     
     def find_collisions(self):
@@ -382,12 +382,12 @@ class GroundControlSystem():
         preferbaly don't collide pls :D
         """
 
-        for agent in self._agent_list.values():
-            agent.next_pos = agent._path[agent._path_index + 1]
-            #if agent._id == "CF2":
+        # for agent in self._agent_list.values():
+        #     agent.next_pos = agent._path[agent._path_index + 1]
+            #if agent.id == "CF2":
             #    print(f"CF2 Current pos: {agent._path[agent._path_index]}")
             #    print(f"CF2 Next pos: {agent._path[agent._path_index+1]}")
-            #if agent._id == "CF5":
+            #if agent.id == "CF5":
             #    print(f"CF5 Current pos: {agent._path[agent._path_index]}")
             #    print(f"CF5 Next pos: {agent._path[agent._path_index+1]}")
             # print(agent.next_pos)
@@ -398,11 +398,11 @@ class GroundControlSystem():
         CF5box = []
         # find all the hitboxes and adds the points to all_hitboxes list
         for agent in self._agent_list.values():
-            all_hitboxes += self.get_hitbox(agent._path[agent._path_index+1])
-            if agent._id == "CF5":
-                CF5box += self.get_hitbox(agent._path[agent._path_index+1])
-            if agent._id == "CF2":
-                CF2box += self.get_hitbox(agent._path[agent._path_index+1])
+            all_hitboxes += self.get_hitbox(agent.get_next_pos())
+            if agent.id == "CF5":
+                CF5box += self.get_hitbox(agent.get_next_pos())
+            if agent.id == "CF2":
+                CF2box += self.get_hitbox(agent.get_next_pos())
         #print(all_hitboxes)
 
         duplicates = []
@@ -411,14 +411,15 @@ class GroundControlSystem():
         bad_agents = []
         bad_agent_ids = []
         for agent in self._agent_list.values():
-            if agent.next_pos in duplicates:
+            if agent.get_next_pos() in duplicates:
                 bad_agents.append(agent)
                 bad_agent_ids.append(agent._id)
+
 
         print(f"bad agents: {bad_agent_ids}")
         for agent_1 in self._agent_list.values():
             for agent_2 in self._agent_list.values():
-                if agent_1._path[agent_1._path_index] == agent_2._path[agent_2._path_index] and agent_1._id != agent_2._id:
+                if agent_1.get_path_pos() == agent_2.get_path_pos() and agent_1.id != agent_2.id:
                     print("WeeWoooWeeWoo")
         # is it good code? no. but that's okay
         fixed_pairs = []
@@ -428,13 +429,13 @@ class GroundControlSystem():
             for agent_b in bad_agents:
                 # print(f"agent b: {agent_b}")
                 if {agent_a, agent_b} not in fixed_pairs and \
-                agent_a._id != agent_b._id and \
-                agent_b.next_pos in self.get_hitbox(agent_a.next_pos):
+                agent_a.id != agent_b.id and \
+                agent_b.get_next_pos() in self.get_hitbox(agent_a.get_next_pos()):
                     self._fix_collision(agent_b,agent_a)
                     fixed_pairs.append({agent_a, agent_b})
                 if {agent_a, agent_b} not in fixed_pairs and \
-                agent_a._id != agent_b._id and \
-                agent_a.next_pos in self.get_hitbox(agent_b.next_pos):
+                agent_a.id != agent_b.id and \
+                agent_a.get_next_pos() in self.get_hitbox(agent_b.get_next_pos()):
                     self._fix_collision(agent_a,agent_b)
                     fixed_pairs.append({agent_a, agent_b})
                     
