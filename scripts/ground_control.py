@@ -4,6 +4,7 @@
 from dataclasses import dataclass
 import numpy as np
 import matplotlib.pyplot as plt
+import math
 import time
 import networkx as nx
 from a_star import astar
@@ -30,9 +31,16 @@ class GroundControlSystem():
     def update(self):
         for agent_id, agent in self._agent_list.items():
             if agent.path_complete():
-                end_point = agent.get_path_end()
-                agent.clear_tasks_and_path()
-                agent.add_to_path([agent.get_path_end()]*2)
+                if not agent.at_base_station():
+                    end_point = to_astar(agent.get_path_end(), self._env)
+                    start_loc = to_astar((agent.get_base_station().x, agent.get_base_station().y), self._env)
+                    return_path = astar(end_point, start_loc, self._map)
+                    agent.clear_tasks_and_path()
+                    agent.add_to_path(from_astar(return_path, self._env))
+                    agent.add_to_path([(agent.get_base_station().x, agent.get_base_station().y)]*2)
+                else:
+                    agent.clear_tasks_and_path()
+                    agent.add_to_path([(agent.get_base_station().x, agent.get_base_station().y)]*2)
             if agent.available_for_task() and agent_id not in self._available_agents:
                 self._available_agents.append(agent_id)
             elif not agent.available_for_task() and agent_id in self._available_agents:
@@ -44,7 +52,7 @@ class GroundControlSystem():
             agent = self._agent_list[agent_id]
             if agent.get_task_to_plan():
                 task = self._task_list[agent.get_task_to_plan()]
-                agent_pos = to_astar((agent.get_path_end()[1], agent.get_path_end()[0]), self._env)
+                agent_pos = to_astar(agent.get_path_end(), self._env)
                 pick_loc = to_astar((task.pick_loc.x, task.pick_loc.y), self._env)
                 drop_loc = to_astar((task.drop_loc.x, task.drop_loc.y), self._env)
 
@@ -58,7 +66,7 @@ class GroundControlSystem():
 
                     agent.add_to_path(from_astar(astar_path, self._env))
                     agent.remove_planned_task()
-                    # print(agent._path)
+                print(agent._path)
 
                 # plt.plot([a[1] for a in raw_path], [a[0] for a in raw_path])
                 # plt.xlim([0, 30])
@@ -332,8 +340,8 @@ class GroundControlSystem():
         8 points immeditaely surrounding it (and the point itself)
         """
 
-        neighbors = [(0, -1), (0, 1), (-1, 0), (1, 0), \
-                            (-1, -1), (1, 1), (-1, 1), (1, -1)]
+        neighbors = [(0, -.1), (0, .1), (-.1, 0), (.1, 0), (0,0), \
+                            (-.1, -.1), (.1, .1), (-.1, .1), (.1, -.1)]
         hitbox = [tuple(map(sum, zip(pos, n))) for n in neighbors]
         hitbox.append(pos)
         return hitbox
@@ -348,47 +356,63 @@ class GroundControlSystem():
         for agent in self._agent_list.values():
             print(agent._path)
     
-    def _fix_collision(self, agent):
+    def _fix_collision(self, agent_a, agent_b):
         """
-        Given agent waits one timestep before continuing to move by inserting
-        a repeat of it's current position as the next step in the list
+        Given agent moves one step left of it's current position as the next step in the list
         """
-        agent._path.insert(agent._path_index + 1, agent._path[agent._path_index])
+        a_pos = agent_a._path[agent_a._path_index]
+        a_next_pos = agent_a.next_pos
+        b_pos = agent_b._path[agent_b._path_index]
+        b_next_pos = agent_b.next_pos
+        a_next_pos = (a_pos[0],a_pos[1])
+        if b_next_pos == a_pos:
+            dy=b_pos[0]-a_pos[0]
+            dx=b_pos[1]-a_pos[1]
+            a_next_pos = (a_pos[0]+dx,a_pos[1]+dy)
+        agent_a._path.insert(agent_a._path_index+1, a_next_pos)
+
     
     def find_collisions(self):
         """
         Find all potential collisions in the drones' next moves and then
         preferbaly don't collide pls :D
         """
-        all_hitboxes = []
-        # find all the hitboxes
-        for agent in self._agent_list.values():
-            all_hitboxes += self.get_hitbox(agent._path[agent._path_index])
 
-        agent_next_pos = [agent._path[agent._path_index + 1] for agent in self._agent_list.values()]
-        # print(f"agent_next_pos: {agent_next_pos}")
+        for agent in self._agent_list.values():
+            agent.next_pos = agent._path[agent._path_index + 1]
+            # print(agent.next_pos)
+        # agent_next_pos = [agent._path[agent._path_index + 1] for agent in self._agent_list.values()]
+
+        all_hitboxes = []
+        # find all the hitboxes and adds the points to all_hitboxes list
+        for agent in self._agent_list.values():
+            all_hitboxes += self.get_hitbox(agent.next_pos)
 
         duplicates = [x for x in all_hitboxes if all_hitboxes.count(x) > 1]
         # print(f"duplicates: {duplicates}")
-        drone_points = [point for point in list(agent_next_pos)\
-                    if point in duplicates]
-        print(f"drone points: {drone_points}")
-        # print(f"overlap: {drone_points}")
-        bad_agents = [list(agent_next_pos).index(o) for o in drone_points]
-        print(f"bad agents: {bad_agents}")
+        bad_agents = []
+        for agent in self._agent_list.values():
+            if agent.next_pos in duplicates:
+                bad_agents.append(agent)
+
+        # print(f"bad agents: {bad_agents}")
 
         # is it good code? no. but that's okay
         fixed_pairs = []
 
         for agent_a in bad_agents:
-            print(f"agent a: {agent_a}")
+            # print(f"bad agent a: {agent_a}")
             for agent_b in bad_agents:
-                print(f"agent b: {agent_b}")
+                # print(f"agent b: {agent_b}")
                 if {agent_a, agent_b} not in fixed_pairs and \
-                agent_a != agent_b and \
-                (agent_next_pos[agent_a] in self.get_hitbox(agent_next_pos[agent_b]) or \
-                agent_next_pos[agent_b] in self.get_hitbox(agent_next_pos[agent_a])):
-                    self._fix_collision(agent_b)
+                agent_a._id != agent_b._id and \
+                agent_b.next_pos in self.get_hitbox(agent_a.next_pos):
+                    self._fix_collision(agent_b,agent_a)
+                    fixed_pairs.append({agent_a, agent_b})
+                if {agent_a, agent_b} not in fixed_pairs and \
+                agent_a._id != agent_b._id and \
+                agent_a.next_pos in self.get_hitbox(agent_b.next_pos):
+                    self._fix_collision(agent_a,agent_b)
                     fixed_pairs.append({agent_a, agent_b})
                     
     '''def go_and_dont_crash(self):
@@ -399,7 +423,6 @@ class GroundControlSystem():
         for agent in self._agent_list.values():
             agent._path_index += 1'''
     
-# dataclass!!!!!
 @dataclass
 class Heuristic:
     """
@@ -452,7 +475,6 @@ class Heuristic:
 
         cost = total_distance - time + priority
         return cost
-
 
     def __float__(self):
         """

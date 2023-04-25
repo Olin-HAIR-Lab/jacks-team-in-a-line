@@ -2,7 +2,7 @@
 Currently: ignoring shelves as obstacles, assuming all moves are valid
 """
 
-from a_star import astar
+from scripts.a_star import astar
 from itertools import product
 
 map_grid = [
