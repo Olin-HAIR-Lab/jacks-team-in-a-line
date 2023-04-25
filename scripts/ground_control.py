@@ -1,12 +1,17 @@
 """ This script holds the functions used in the ground control system"""
 
 
+from dataclasses import dataclass
 import numpy as np
 import matplotlib.pyplot as plt
 import time
 import networkx as nx
 from a_star import astar
 from generate_map import base_map, to_astar, from_astar
+import math
+
+from scripts.Quadrotor import Quadrotor
+from scripts.utils import Task
 
 class GroundControlSystem():
     def __init__(self, agent_list=None, task_list=None, env=None):
