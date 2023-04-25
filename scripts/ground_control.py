@@ -371,6 +371,7 @@ class GroundControlSystem():
             dy=b_pos[0]-a_pos[0]
             dx=b_pos[1]-a_pos[1]
             a_next_pos = (a_pos[0]+dx,a_pos[1]+dy)
+            agent_a.add_next_pos(a_next_pos)
         else:
             agent_a.add_next_pos(a_next_pos)
             #if agent_a.id=="CF5" or agent_a.id == "CF6":
