@@ -27,6 +27,10 @@ map:
     y_max: 11
     y_min: -9
   obstacles:
-  - !!python/tuple
-    - 12
-    - 6
+  - !!python/list
+    - !!python/tuple
+      - 10
+      - 11
+    - !!python/tuple
+      - 9
+      - 10

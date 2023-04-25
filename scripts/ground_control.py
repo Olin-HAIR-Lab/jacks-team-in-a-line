@@ -337,11 +337,14 @@ class GroundControlSystem():
         Given a center position, returns a list containing the
         8 points immeditaely surrounding it (and the point itself)
         """
-
+        hitbox=[]
         neighbors = [(0, -.1), (0, .1), (-.1, 0), (.1, 0), (0,0), \
                             (-.1, -.1), (.1, .1), (-.1, .1), (.1, -.1)]
-        hitbox = [tuple(map(sum, zip(pos, n))) for n in neighbors]
-        hitbox.append(pos)
+        #hitbox = [tuple(map(sum, zip(pos, n))) for n in neighbors]
+        for neighbor in neighbors:
+            hitbox_point_x = round(pos[0]+neighbor[0],1)
+            hitbox_point_y = round(pos[1]+neighbor[1],1)
+            hitbox.append((hitbox_point_x,hitbox_point_y))
         return hitbox
     
     @DeprecationWarning
@@ -363,12 +366,14 @@ class GroundControlSystem():
         b_pos = agent_b._path[agent_b._path_index]
         b_next_pos = agent_b.next_pos
         a_next_pos = (a_pos[0],a_pos[1])
-        if b_next_pos == a_pos:
+        if b_next_pos == a_pos or a_next_pos == b_next_pos:
+            print("PROBLEMO")
             dy=b_pos[0]-a_pos[0]
             dx=b_pos[1]-a_pos[1]
             a_next_pos = (a_pos[0]+dx,a_pos[1]+dy)
         agent_a._path.insert(agent_a._path_index+1, a_next_pos)
-
+        if agent_a._id=="CF5" or agent_a._id == "CF2":
+            print("Waiting")
     
     def find_collisions(self):
         """
@@ -378,23 +383,43 @@ class GroundControlSystem():
 
         for agent in self._agent_list.values():
             agent.next_pos = agent._path[agent._path_index + 1]
+            #if agent._id == "CF2":
+            #    print(f"CF2 Current pos: {agent._path[agent._path_index]}")
+            #    print(f"CF2 Next pos: {agent._path[agent._path_index+1]}")
+            #if agent._id == "CF5":
+            #    print(f"CF5 Current pos: {agent._path[agent._path_index]}")
+            #    print(f"CF5 Next pos: {agent._path[agent._path_index+1]}")
             # print(agent.next_pos)
         # agent_next_pos = [agent._path[agent._path_index + 1] for agent in self._agent_list.values()]
 
         all_hitboxes = []
+        CF2box = []
+        CF5box = []
         # find all the hitboxes and adds the points to all_hitboxes list
         for agent in self._agent_list.values():
-            all_hitboxes += self.get_hitbox(agent.next_pos)
+            all_hitboxes += self.get_hitbox(agent._path[agent._path_index+1])
+            if agent._id == "CF5":
+                CF5box += self.get_hitbox(agent._path[agent._path_index+1])
+            if agent._id == "CF2":
+                CF2box += self.get_hitbox(agent._path[agent._path_index+1])
+        #print(all_hitboxes)
 
+        duplicates = []
         duplicates = [x for x in all_hitboxes if all_hitboxes.count(x) > 1]
-        # print(f"duplicates: {duplicates}")
+        #print(f"duplicates: {duplicates}")
         bad_agents = []
+        bad_agent_ids = []
         for agent in self._agent_list.values():
             if agent.next_pos in duplicates:
                 bad_agents.append(agent)
+                bad_agent_ids.append(agent._id)
 
-        # print(f"bad agents: {bad_agents}")
 
+        print(f"bad agents: {bad_agent_ids}")
+        for agent_1 in self._agent_list.values():
+            for agent_2 in self._agent_list.values():
+                if agent_1._path[agent_1._path_index] == agent_2._path[agent_2._path_index] and agent_1._id != agent_2._id:
+                    print("WeeWoooWeeWoo")
         # is it good code? no. but that's okay
         fixed_pairs = []
 

@@ -167,7 +167,7 @@ if __name__ == '__main__':
         task_assignment = gcs.get_task_assignment(draw=False)
 
         i += 1
-
+        print(i+5)
         if use_hardware:
             time.sleep(time_delta)
 
