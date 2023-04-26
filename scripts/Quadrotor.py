@@ -246,6 +246,12 @@ class Quadrotor():
         if self._path_index + 1 >= len(self._path):
             return None
         return self._path[self._path_index + 1]
+    
+    def get_future_pos(self):
+        """Returns future position of the drone according to its path"""
+        if self._path_index + 2 >= len(self._path):
+            return self.get_next_pos()
+        return self._path[self._path_index + 2]
 
     def add_next_pos(self, pos):
         self._path.insert(self._path_index + 1, pos)
