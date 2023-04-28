@@ -490,7 +490,7 @@ class Heuristic:
         distance_from_path = self.get_euclidian_distance(
             self.path_end_loc(), self.task.pick_loc)
         steps_left = self.steps_left_in_path()
-        total_distance = distance_from_path + steps_left
+        total_distance = (distance_from_path + steps_left) * self.dist_weight
         # time = time.time - self.task.time_input
         priority = self.task.priority * self.priority_weight
 
