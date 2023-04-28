@@ -32,8 +32,10 @@ if __name__ == '__main__':
     # load configuration file from YAML file
     original_map = './base_config.yaml'
     new_map = "new_map_config.yaml"
-    active_map = original_map
-    with open(active_map, 'r') as file:
+    tests = ["test_1_config.yaml", "test_2_config.yaml", "test_3_config.yaml", "test_4_config.yaml"]
+
+    active_map = new_map
+    with open("test_4_config.yaml", 'r') as file:
         config = yaml.load(file, Loader=yaml.FullLoader)
 
     use_hardware = config['use_hardware']
@@ -170,7 +172,7 @@ if __name__ == '__main__':
 
         i += 1
         # Print Timestep
-        #print(i+5)
+        # print(i+5)
         if use_hardware:
             time.sleep(time_delta)
 
