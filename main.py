@@ -32,10 +32,11 @@ if __name__ == '__main__':
     # load configuration file from YAML file
     original_map = './base_config.yaml'
     new_map = "new_map_config.yaml"
-    tests = ["test_1_config.yaml", "test_2_config.yaml", "test_3_config.yaml", "test_4_config.yaml"]
+    test_maps = ["test_1_config.yaml", "test_2_config.yaml",
+                 "test_3_config.yaml", "test_4_config.yaml"]
 
     active_map = new_map
-    with open("test_4_config.yaml", 'r') as file:
+    with open(test_maps[1], 'r') as file:
         config = yaml.load(file, Loader=yaml.FullLoader)
 
     use_hardware = config['use_hardware']
