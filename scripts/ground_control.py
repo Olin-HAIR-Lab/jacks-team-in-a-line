@@ -387,11 +387,9 @@ class GroundControlSystem():
         b_pos = agent_b.get_path_pos()
         b_next_pos = agent_b.get_next_pos()
         
-        # TODO catch the edge case where drones cross diagonally between two points but don't end on either square
-
         # Default to lower prioity drone waits, but if there would be a collision, 
         # find the best place to move that avoids the collision
-        if b_next_pos == a_pos or a_next_pos == b_next_pos:
+        if b_next_pos == a_pos:
             a_next_pos=self.find_best_move(agent_a)
         else:
             a_next_pos = (a_pos[0],a_pos[1])
