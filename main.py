@@ -7,6 +7,7 @@ import plotly.graph_objects as go
 from simulation.Simulation import Simulation
 from itertools import product
 
+
 def define_env(map):
     """
     Take in the two corners of rectangles from the yaml file
@@ -20,15 +21,19 @@ def define_env(map):
     y_vals = []
     for pair in corners:
         x_vals += [x for x in range(pair[0][0], pair[1][0] + 1)]
-        y_vals +=  [y for y in range(pair[0][1], pair[1][1] + 1)]
+        y_vals += [y for y in range(pair[0][1], pair[1][1] + 1)]
         obstacles += product(x_vals, y_vals)
- 
+
     env['obstacles'] = list(set(obstacles))
     return env
 
+
 if __name__ == '__main__':
     # load configuration file from YAML file
-    with open('./base_config.yaml', 'r') as file:
+    original_map = './base_config.yaml'
+    new_map = "new_map_config.yaml"
+    active_map = original_map
+    with open(active_map, 'r') as file:
         config = yaml.load(file, Loader=yaml.FullLoader)
 
     use_hardware = config['use_hardware']
@@ -40,13 +45,13 @@ if __name__ == '__main__':
     env = define_env(config['map'])
     num_agents = len(agent_init)
 
-    print(f'Number of Agents: [{num_agents}] -> {[agent_init[i][0] for i in range(len(agent_init))]}')
+    print(
+        f'Number of Agents: [{num_agents}] -> {[agent_init[i][0] for i in range(len(agent_init))]}')
     print(f'Use Hardware: [{use_hardware}]')
     print(f'Time Delta (dt): [{time_delta}]')
 
-
     # ---------------------------------------------------------------------------------------------------------
-    #### STEP 1.A: Define the task list
+    # STEP 1.A: Define the task list
     # ---------------------------------------------------------------------------------------------------------
 
     # create the task list
@@ -60,21 +65,21 @@ if __name__ == '__main__':
 
     for i in range(len(pick_locations)):
         t = Task(pick_loc=Position(x=pick_locations[i][1][0], y=pick_locations[i][1][1], z=pick_locations[i][1][2]),
-                drop_loc=Position(x=drop_locations[i][1][0], y=drop_locations[i][1][1], z=0.0), 
-                pick_id=pick_locations[i][0], 
-                drop_id=drop_locations[i][0], 
-                id='T'+str(i), 
-                priority=i,
-                time_input=time.time())
+                 drop_loc=Position(
+                     x=drop_locations[i][1][0], y=drop_locations[i][1][1], z=0.0),
+                 pick_id=pick_locations[i][0],
+                 drop_id=drop_locations[i][0],
+                 id='T'+str(i),
+                 priority=i,
+                 time_input=time.time())
         task_list['T'+str(i)] = t
 
         print(f'Task {t.id}: {t.pick_id} -> {t.drop_id}')
 
     print('-----------------------')
 
-
     # ---------------------------------------------------------------------------------------------------------
-    #### STEP 1.B: Define the agent list
+    # STEP 1.B: Define the agent list
     # ---------------------------------------------------------------------------------------------------------
 
     print('----------------------------------')
@@ -93,64 +98,61 @@ if __name__ == '__main__':
         '#7f7f7f',  # middle gray
         '#bcbd22',  # curry yellow-green
         '#17becf'   # blue-teal
-    ]   
+    ]
 
     agent_list = dict()
     for i in range(num_agents):
         # define initial state
-        start = State(x_pos=agent_init[i][1][0], 
-                    y_pos=agent_init[i][1][1])
+        start = State(x_pos=agent_init[i][1][0],
+                      y_pos=agent_init[i][1][1])
         # define the appropriate UR1
         uri = 'radio://0/'+agent_init[i][0][2:]+'0/2M/E7E7E7E7E7'
         # define agent as Quadrotor
-        agent = Quadrotor(init_state=start, 
-                        color=colors[i], 
-                        id=agent_init[i][0], 
-                        uri=uri,
-                        take_off_height=agent_init[i][2], 
-                        hardware_flag=use_hardware,
-                        dt=time_delta)
+        agent = Quadrotor(init_state=start,
+                          color=colors[i],
+                          id=agent_init[i][0],
+                          uri=uri,
+                          take_off_height=agent_init[i][2],
+                          hardware_flag=use_hardware,
+                          dt=time_delta)
         agent_list[agent._id] = agent
 
         if use_hardware:
             print(f'Agent {agent._id}: {agent_list[agent._id].get_pos().x, agent_list[agent._id].get_pos().y} \
                 ---> {uri}')
         else:
-            print(f'Agent {agent._id}: {agent_list[agent._id].get_pos().x, agent_list[agent._id].get_pos().y} ')
-
+            print(
+                f'Agent {agent._id}: {agent_list[agent._id].get_pos().x, agent_list[agent._id].get_pos().y} ')
 
     print('----------------------------------')
 
     if use_hardware:
         print('\n !!!!!!!!Please ensure you confirm the Crazyflies are connected to the right radio channels!!!!!!!!')
 
-
-
     # #########################################################################################################
-    #### STEP 2: Implement Multi-Agent Task Assignment
+    # STEP 2: Implement Multi-Agent Task Assignment
     # #########################################################################################################
-
 
     # ---------------------------------------------------------------------------------------------------------
-    #### STEP 2.A. Define the Ground Constrol System & compute assignment
+    # STEP 2.A. Define the Ground Constrol System & compute assignment
     # ---------------------------------------------------------------------------------------------------------
 
     # instantiate ground control system object
-    gcs = GroundControlSystem(agent_list=agent_list, 
-                            task_list=task_list,
-                            env=env)
-    
+    gcs = GroundControlSystem(agent_list=agent_list,
+                              task_list=task_list,
+                              env=env)
 
-    ##### SETUP FOR SIMLUATION
+    # SETUP FOR SIMLUATION
     fig1 = go.Figure()
     fig2 = go.Figure()
     fig_animated = go.Figure()
-    sim = Simulation(env = env_simplified, fig1 = fig1, fig2 = fig2, fig_animated=fig_animated)
+    fig3d_animated = go.Figure()
+    sim = Simulation(env=env_simplified, fig1=fig1, fig2=fig2,
+                     fig_animated=fig_animated, fig3d_animated=fig3d_animated)
     sim.add_agents(agent_list)
     sim.set_task_list(task_list)
     sim.init_plot()
 
-    
     for agent in agent_list.values():
         agent.initialize_agent()
 
@@ -158,20 +160,21 @@ if __name__ == '__main__':
         time.sleep(3)
 
     i = 0
-    while i < 100:
+    while i < 115:
         # update the drone for it's next step
         gcs.update()
         # create a map of where the drone has gone
         gcs.set_task_graph(draw=False)
-        #get tasks for task assignment
+        # get tasks for task assignment
         task_assignment = gcs.get_task_assignment(draw=False)
 
         i += 1
-        print(i+5)
+        # Print Timestep
+        #print(i+5)
         if use_hardware:
             time.sleep(time_delta)
 
     for agent in agent_list.values():
         agent.land()
-    
+
     sim.update_plot()

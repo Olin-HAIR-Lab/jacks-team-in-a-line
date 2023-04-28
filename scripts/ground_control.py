@@ -140,7 +140,7 @@ class GroundControlSystem():
 
         # add agent start locations:
         for a in self._agent_list.values():
-            self.G.add_node(a._id, pos=(a.get_pos().x, a.get_pos().y))
+            self.G.add_node(a.id, pos=(a.get_pos().x, a.get_pos().y))
 
         # add pick and drop locations of tasks:
         for t in self._task_list.values():
@@ -175,7 +175,7 @@ class GroundControlSystem():
                         self.G.add_edge(task[i].pick_id,
                                         task[i].drop_id, color=colors[j])
             else:
-                self.G.add_edge(agent._id, task.pick_id, color=colors[j])
+                self.G.add_edge(agent.id, task.pick_id, color=colors[j])
                 self.G.add_edge(task.pick_id, task.drop_id, color=colors[j])
             j += 1
 
@@ -379,21 +379,73 @@ class GroundControlSystem():
 
     def _fix_collision(self, agent_a, agent_b):
         """
-        Given agent moves one step left of it's current position as the next step in the list
+        Reroutes lower priority drone in collision to stay put or dodge away from collision
         """
-        a_pos = agent_a._path[agent_a._path_index]
-        a_next_pos = agent_a.next_pos
-        b_pos = agent_b._path[agent_b._path_index]
-        b_next_pos = agent_b.next_pos
-        a_next_pos = (a_pos[0],a_pos[1])
+        # Find the agents current positons and where they are travelling
+        a_pos = agent_a.get_path_pos()
+        a_next_pos = agent_a.get_next_pos()
+        b_pos = agent_b.get_path_pos()
+        b_next_pos = agent_b.get_next_pos()
+        
+        # TODO catch the edge case where drones cross diagonally between two points but don't end on either square
+
+        # Default to lower prioity drone waits, but if there would be a collision, 
+        # find the best place to move that avoids the collision
         if b_next_pos == a_pos or a_next_pos == b_next_pos:
-            print("PROBLEMO")
-            dy=b_pos[0]-a_pos[0]
-            dx=b_pos[1]-a_pos[1]
-            a_next_pos = (a_pos[0]+dx,a_pos[1]+dy)
-        agent_a._path.insert(agent_a._path_index+1, a_next_pos)
-        if agent_a._id=="CF5" or agent_a._id == "CF2":
-            print("Waiting")
+            a_next_pos=self.find_best_move(agent_a)
+        else:
+            a_next_pos = (a_pos[0],a_pos[1])
+        agent_a.add_next_pos(a_next_pos)
+
+
+    def find_best_move(self, agent):
+        """
+        Finds the closest move to the agent's intended path that avoids obstacles and other drones
+        """
+        # Find all feasible moves for the agent
+        potential_moves=self.get_hitbox(agent.get_path_pos())
+        # print(f"the potential moves are {potential_moves}")
+        good_moves=[]
+        bad_moves=[]
+        # If a potential move would cause a collision, move it to bad moves
+        for move in potential_moves:
+            # Check if the move location is an obstacle
+            move_pos=to_astar(move, self._env)
+            # print(f" obtacle?: {self._map[move_pos[0]][move_pos[1]]}")
+            if self._map[move_pos[0]][move_pos[1]] == 1:
+                bad_moves.append(move)
+            # Check if move location is another drone
+            for agent_a in self._agent_list.values():
+                if (move == agent_a.get_next_pos() or move == agent_a.get_path_pos()) and agent_a.id != agent.id:
+                    bad_moves.append(move)
+        # Good moves are the remaining moves that haven't caused collisions
+        good_moves = [move for move in potential_moves if move not in bad_moves]
+        #print(f"the good moves are {good_moves}")
+
+        #Find the best of the valid moves
+        cost = []
+        # Find the distance of the move to the agent's future position or
+        for move in good_moves:
+            cost.append(self._find_move_cost(agent,move))
+            #print(f"the cost is {cost}")
+        # Find the move closest to the agent's future position or
+        # have the agent remain still of there are no good moves
+        if len(cost) == 0:
+            return agent.get_path_pos()
+        else:
+            best_move=min(cost)
+        return good_moves[cost.index(best_move)]
+        
+
+    def _find_move_cost(self, agent, move):
+        """
+        Find the distance to a point 4 moves down the path.
+        """
+        dir_pos = agent.get_future_pos()
+        cost = abs(dir_pos[1] - move[1]) + \
+            abs(dir_pos[0] - move[0])
+        return cost
+          
     
     def find_collisions(self):
         """
@@ -401,52 +453,37 @@ class GroundControlSystem():
         preferbaly don't collide pls :D
         """
 
-        for agent in self._agent_list.values():
-            agent.next_pos = agent._path[agent._path_index + 1]
-            #if agent._id == "CF2":
-            #    print(f"CF2 Current pos: {agent._path[agent._path_index]}")
-            #    print(f"CF2 Next pos: {agent._path[agent._path_index+1]}")
-            #if agent._id == "CF5":
-            #    print(f"CF5 Current pos: {agent._path[agent._path_index]}")
-            #    print(f"CF5 Next pos: {agent._path[agent._path_index+1]}")
-            # print(agent.next_pos)
-        # agent_next_pos = [agent._path[agent._path_index + 1] for agent in self._agent_list.values()]
-
         all_hitboxes = []
-        CF2box = []
-        CF5box = []
         # find all the hitboxes and adds the points to all_hitboxes list
         for agent in self._agent_list.values():
-            all_hitboxes += self.get_hitbox(agent._path[agent._path_index+1])
-            if agent._id == "CF5":
-                CF5box += self.get_hitbox(agent._path[agent._path_index+1])
-            if agent._id == "CF2":
-                CF2box += self.get_hitbox(agent._path[agent._path_index+1])
+            all_hitboxes += self.get_hitbox(agent.get_next_pos())
         #print(all_hitboxes)
 
+        # find where hitboxes overlap 
         duplicates = []
         duplicates = [x for x in all_hitboxes if all_hitboxes.count(x) > 1]
         #print(f"duplicates: {duplicates}")
+
         bad_agents = []
         bad_agent_ids = []
+        # if an agent enters an overlapping hitbox, add it to a list to be checked for collisions
         for agent in self._agent_list.values():
-            if agent.next_pos in duplicates:
+            if agent.get_next_pos() in duplicates:
                 bad_agents.append(agent)
                 bad_agent_ids.append(agent._id)
+        # print(f"bad agents: {bad_agent_ids}")
 
 
-        print(f"bad agents: {bad_agent_ids}")
-        for agent_1 in self._agent_list.values():
-            for agent_2 in self._agent_list.values():
-                if agent_1._path[agent_1._path_index] == agent_2._path[agent_2._path_index] and agent_1._id != agent_2._id:
-                    print("WeeWoooWeeWoo")
         # is it good code? no. but that's okay
         fixed_pairs = []
 
+        # check and reroute all bad agents to avoid collisions
         for agent_a in bad_agents:
             # print(f"bad agent a: {agent_a}")
             for agent_b in bad_agents:
                 # print(f"agent b: {agent_b}")
+                # if the drones haven't been fixed already, are not the same drone, 
+                # and are colliding, reroute the lower priority drone
                 if {agent_a, agent_b} not in fixed_pairs and \
                         agent_a._id != agent_b._id and \
                         agent_b.next_pos in self.get_hitbox(agent_a.next_pos):
