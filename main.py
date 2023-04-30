@@ -30,10 +30,10 @@ def define_env(map):
 
 if __name__ == '__main__':
     # load configuration file from YAML file
-    original_map = './base_config.yaml'
-    new_map = "new_map_config.yaml"
+    original_map = './maps/base_config.yaml'
+    new_map = "./maps/new_map_config.yaml"
     active_map = original_map
-    with open(active_map, 'r') as file:
+    with open('./maps/three_drone_config.yaml', 'r') as file:
         config = yaml.load(file, Loader=yaml.FullLoader)
 
     use_hardware = config['use_hardware']
@@ -160,7 +160,7 @@ if __name__ == '__main__':
         time.sleep(3)
 
     i = 0
-    while i < 115:
+    while i < 100:
         # update the drone for it's next step
         gcs.update()
         # create a map of where the drone has gone

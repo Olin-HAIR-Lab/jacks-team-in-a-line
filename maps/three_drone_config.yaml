@@ -1,0 +1,47 @@
+# settings
+use_hardware:   True
+time_delta:     0.2
+
+#                 Agent ID, Init position, Take-off height
+agent_init:     [['CF9', [-0.6, 0.3, 0.0], 0.4],
+                 ['CF7', [-0.6, 0.0, 0.0], 0.4],
+                 ['CF5', [-0.6, -0.3, 0.0], 0.4]]
+
+
+agent_colors:   ['DarkBlue', 'DarkSlateGrey', 'MediumPurple']
+
+#                 Pick ID, [pick x, pick y, pick z]
+pick_loc:       [['P1', [0.15, 0.25, 0.4]],
+                 ['P2', [0.15, -0.25, 0.4]], 
+                 ['P3', [0.455, 0.25, 0.4]], 
+                 ['P4', [0.455, -0.25, 0.4]],
+                 ['P5', [0.76, 0.25, 0.4]]]
+
+#                 Drop ID, [drop x, drop y, drop z]
+drop_loc:       [['D1', [1.8, 0.6]], 
+                 ['D2', [1.8, -0.3]], 
+                 ['D2', [1.8, -0.3]], 
+                 ['D1', [1.8, 0.6]],
+                 ['D1', [1.8, 0.6]]]
+
+map:
+  dimensions:
+    x_max: 21
+    x_min: -9
+    y_max: 11
+    y_min: -9
+  obstacles:
+  - !!python/list
+    - !!python/tuple
+      - 0
+      - -6
+    - !!python/tuple
+      - 12
+      - -3
+  - !!python/list
+    - !!python/tuple
+      - 0
+      - 3
+    - !!python/tuple
+      - 12
+      - 6

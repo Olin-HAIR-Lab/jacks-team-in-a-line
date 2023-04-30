@@ -7,6 +7,7 @@ import cflib.crtp
 from cflib.crazyflie import Crazyflie
 from cflib.crazyflie.syncCrazyflie import SyncCrazyflie
 from cflib.positioning.motion_commander import MotionCommander
+from cflib.positioning.position_hl_commander import PositionHlCommander
 from cflib.crazyflie.log import LogConfig
 from cflib.crazyflie.syncLogger import SyncLogger
 from cflib.utils import uri_helper
@@ -126,6 +127,12 @@ class Quadrotor():
                 # instantiate the motion commander to enable use of start linear motion
                 self.mc = MotionCommander(self.scf, default_height=self._take_off_height)
 
+                # instantiate position highlevel commander
+                self.pc = PositionHlCommander(self.scf, x=self._state.x_pos, y=self._state.y_pos, z=self._state.z_pos, 
+                                    default_velocity=0.3, default_height=0.4, controller=PositionHlCommander.CONTROLLER_PID)
+                
+                print(f'Agent [{self._id}] | Started PositionHlCommander!') 
+
                 self.take_off()
         else: 
             self.take_off()
@@ -139,13 +146,10 @@ class Quadrotor():
 
     def update(self):
         """Commands the drone to go to the next step of its path"""
-        # if self._path_index + 2 >= len(self._path):
-        #     self._path.append(self._path[-1])
 
         if self._path_index + 1 < len(self._path):
             self._path_index += 1
             next_pos = self._path[self._path_index]
-            # kinda a fucky fix for the time being but yes
             pos_setpoint = [next_pos[0], next_pos[1], self._take_off_height, 0]
             if self._hardware_flag:
                 self.position_setpoint_hw(pos_setpoint)
@@ -191,11 +195,9 @@ class Quadrotor():
 
     def position_setpoint_hw(self, pos_cmd):
         """calls the Position commander module to send position setpoint packets to the Crazyflie"""
-        cf = self.scf.cf
-        cf.commander.send_position_setpoint(pos_cmd[0],
-                                            pos_cmd[1],
-                                            pos_cmd[2],
-                                            pos_cmd[3])
+        # print(f"Go To: ({pos_cmd[0]}, {pos_cmd[1]}, {pos_cmd[2]})")
+        self.pc.go_to(pos_cmd[0], pos_cmd[1], pos_cmd[2], velocity=0.3)
+        self.update_state_trace()
     
     def log_pos_callback(self, timestamp, data, logconf):
         """Logs drone position"""
@@ -312,7 +314,7 @@ class Quadrotor():
     def take_off(self):
         """Commands the drone to begin flying"""
         if self._hardware_flag:
-            self.mc.take_off(height=self._take_off_height)
+            self.pc.take_off(height=self._take_off_height)
             print(f'Agent [{self._id}] is Taking Off!!')
         else:
             print(f'Agent [{self._id}] is Taking Off!!')
@@ -326,7 +328,8 @@ class Quadrotor():
     def land(self):
         """Commands the drone to stop flying"""
         if self._hardware_flag:
-            self.mc.land()
+            self.pc.land()
+            # self.mc.land()
             print(f'Agent [{self._id}] is Landing!!')
         else:
             print(f'Agent [{self._id}] is Landing!!')
