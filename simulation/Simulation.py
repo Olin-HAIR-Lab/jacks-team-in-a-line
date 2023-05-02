@@ -87,18 +87,8 @@ class Simulation():
 
     def create_2D_plot(self, fig):
         """creates 2D plot showing obstacles, agent start locations and task locations"""
-        map_x = []
-        map_y = []
 
         obstacles = self._env['obstacles']
-
-        # for i in range(len(obstacles)):
-        #     map_x.append(obstacles[i][0]/10)
-        #     map_y.append(obstacles[i][1]/10)
-
-        # fig.add_scatter(x=map_x, y=map_y, mode='markers',
-        #                            marker=dict(color='LightSkyBlue', size=20),
-        #                            showlegend=False)
 
         for obstacle in obstacles:
             fig.add_shape(type="rect",
@@ -107,7 +97,7 @@ class Simulation():
 
         # plot agent start locations
         for agent in self._agent_list.values():        
-            fig.add_scatter(x=[agent.get_base_station().x], y=[agent.get_base_station().y], mode='markers',
+            fig.add_scatter(x=[agent.base_station.x], y=[agent.base_station.y], mode='markers',
                                     marker=dict(color=agent._color, size=15,  
                                     symbol='arrow-right'),
                                     name=f"{agent._id} Base Station")
@@ -183,8 +173,8 @@ class Simulation():
 
         # plot agent start locations
         for agent in self._agent_list.values():        
-            fig.add_scatter3d(x=[agent.get_base_station().x], y=[agent.get_base_station().y],
-                                        z=[agent.get_base_station().z+0.075], mode='markers',
+            fig.add_scatter3d(x=[agent.base_station.x], y=[agent.base_station.y],
+                                        z=[agent.base_station.z+0.075], mode='markers',
                                         marker=dict(color=agent._color, size=10, symbol='circle'),
                                         name=agent._id)
 

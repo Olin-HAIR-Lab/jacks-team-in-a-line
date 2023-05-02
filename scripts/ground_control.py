@@ -22,23 +22,28 @@ class GroundControlSystem():
         self._available_agents = list(self._agent_list.keys())
         self._task_queue = list(self._task_list.keys())
         self._completed_tasks = dict()
+        self._agents_active = False
 
         self._map = base_map(env)
         # print(self._map)
 
     def update(self):
+        self._agents_active = False
         for agent_id, agent in self._agent_list.items():
+            if not agent.tasks_complete:
+                self._agents_active = True
             if agent.path_complete():
                 if not agent.at_base_station():
                     end_point = to_astar(agent.get_path_end(), self._env)
-                    start_loc = to_astar((agent.get_base_station().x, agent.get_base_station().y), self._env)
+                    start_loc = to_astar((agent.base_station.x, agent.base_station.y), self._env)
                     return_path = astar(end_point, start_loc, self._map)
                     agent.clear_tasks_and_path()
                     agent.add_to_path(from_astar(return_path, self._env))
-                    agent.add_to_path([(agent.get_base_station().x, agent.get_base_station().y)]*2)
+                    agent.add_to_path([(agent.base_station.x, agent.base_station.y)]*2)
                 else:
                     agent.clear_tasks_and_path()
-                    agent.add_to_path([(agent.get_base_station().x, agent.get_base_station().y)]*2)
+                    agent.add_to_path([(agent.base_station.x, agent.base_station.y)]*2)
+                    agent.set_tasks_complete(True)
             if agent.available_for_task() and agent_id not in self._available_agents:
                 self._available_agents.append(agent_id)
             elif not agent.available_for_task() and agent_id in self._available_agents:
@@ -48,8 +53,8 @@ class GroundControlSystem():
 
         for agent_id in self._available_agents:
             agent = self._agent_list[agent_id]
-            if agent.get_task_to_plan():
-                task = self._task_list[agent.get_task_to_plan()]
+            if agent.task_to_plan:
+                task = self._task_list[agent.task_to_plan]
                 agent_pos = to_astar(agent.get_path_end(), self._env)
                 pick_loc = to_astar((task.pick_loc.x, task.pick_loc.y), self._env)
                 drop_loc = to_astar((task.drop_loc.x, task.drop_loc.y), self._env)
@@ -66,17 +71,17 @@ class GroundControlSystem():
                     agent.remove_planned_task()
                 print(agent._path)
 
-                # plt.plot([a[1] for a in raw_path], [a[0] for a in raw_path])
-                # plt.xlim([0, 30])
-                # plt.ylim([0, 20])
-                # plt.show()
-
         self.find_collisions()
 
         for agent in self._agent_list.values():
             agent.update()
     
+    @property
+    def agents_active(self):
+        return self._agents_active
+
     def assign_tasks(self):
+        """Assign tasks to available agents using Hungarian algorithm"""
         if len(self._available_agents) < 1 or len(self._task_queue) < 1:
             return
 
@@ -338,14 +343,14 @@ class GroundControlSystem():
         8 points immeditaely surrounding it (and the point itself)
         """
         hitbox=[]
-        # neighbors = [(0, -.1), (0, .1), (-.1, 0), (.1, 0), (0,0), \
-        #                     (-.1, -.1), (.1, .1), (-.1, .1), (.1, -.1)]
+        neighbors = [(0, -.1), (0, .1), (-.1, 0), (.1, 0), (0,0), \
+                            (-.1, -.1), (.1, .1), (-.1, .1), (.1, -.1)]
 
-        neighbors = [(0, -.1), (0, .1), (-.1, 0), (.1, 0), \
-                            (-.1, -.1), (.1, .1), (-.1, .1), (.1, -.1), (0,0),
-                            (0,-0.2), (0.1,-0.2), (0.2,-0.2), (-.1,-0.2), (-.2,-0.2),
-                            (0,0.2), (0.1,0.2), (0.2,0.2), (-.1,0.2), (-.2,0.2),
-                            (0.2,-0.1), (0.2,0.1), (0.2,0), (-0.2,-0.1), (-.2,.1), (-.2,0)]
+        # neighbors = [(0, -.1), (0, .1), (-.1, 0), (.1, 0), \
+        #                     (-.1, -.1), (.1, .1), (-.1, .1), (.1, -.1), (0,0),
+        #                     (0,-0.2), (0.1,-0.2), (0.2,-0.2), (-.1,-0.2), (-.2,-0.2),
+        #                     (0,0.2), (0.1,0.2), (0.2,0.2), (-.1,0.2), (-.2,0.2),
+        #                     (0.2,-0.1), (0.2,0.1), (0.2,0), (-0.2,-0.1), (-.2,.1), (-.2,0)]
 
         #hitbox = [tuple(map(sum, zip(pos, n))) for n in neighbors]
         for neighbor in neighbors:

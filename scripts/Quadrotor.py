@@ -31,6 +31,8 @@ class Quadrotor():
 
         # initialize state
         self._state = init_state
+        self._is_flying = False
+        self._tasks_complete = False
 
         # Store start location
         self._base_station = Position(x= self._state.x_pos, y=self._state.y_pos, z=self._state.z_pos)
@@ -146,15 +148,15 @@ class Quadrotor():
 
     def update(self):
         """Commands the drone to go to the next step of its path"""
-
-        if self._path_index + 1 < len(self._path):
-            self._path_index += 1
-            next_pos = self._path[self._path_index]
-            pos_setpoint = [next_pos[0], next_pos[1], self._take_off_height, 0]
-            if self._hardware_flag:
-                self.position_setpoint_hw(pos_setpoint)
-            else:
-                self.position_setpoint_sim(pos_setpoint)
+        if self._is_flying:
+            if self._path_index + 1 < len(self._path):
+                self._path_index += 1
+                next_pos = self._path[self._path_index]
+                pos_setpoint = [next_pos[0], next_pos[1], self._take_off_height, 0]
+                if self._hardware_flag:
+                    self.position_setpoint_hw(pos_setpoint)
+                else:
+                    self.position_setpoint_sim(pos_setpoint)
 
     def velocity_setpoint_sim(self, vel_cmd):
         """advances the system state using a simple kinematic model and the commanded velocity"""
@@ -220,6 +222,29 @@ class Quadrotor():
         self.range_front = data['range.front']
         self.range_back = data['range.back']
 
+    @property
+    def tasks_complete(self):
+        return self._tasks_complete
+
+    @property
+    def is_flying(self):
+        """Returns whether the drone is currently flying"""
+        return self._is_flying
+
+    @property
+    def base_station(self):
+        """Returns position of drone's base station (start location)"""
+        return self._base_station
+
+    @property
+    def task_to_plan(self):
+        """Returns task to plan"""
+        return self._task_to_plan
+    
+    def set_tasks_complete(self, val):
+        """Set tasks compelte to True or False"""
+        self._tasks_complete = val
+
     def clear_tasks_and_path(self):
         """Resets the drone's tasks and paths"""
         self._task_queue = []
@@ -256,15 +281,12 @@ class Quadrotor():
         return self._path[self._path_index + 2]
 
     def add_next_pos(self, pos):
+        """Inserts the next position for the agent"""
         self._path.insert(self._path_index + 1, pos)
 
     def at_base_station(self):
-        """Checks if drone is at the base station"""
+        """Checks if agent is at its base station"""
         return self._path[self._path_index] == (self._base_station.x, self._base_station.y)
-    
-    def get_base_station(self):
-        """Returns position of drone's base station (start location)"""
-        return self._base_station
 
     def add_task(self, task):
         """Add a task to the drone's queue"""
@@ -272,40 +294,42 @@ class Quadrotor():
         self._task_to_plan = task.id
     
     def get_task_queue(self):
+        """Returns task queue"""
         return self._task_queue
-    
-    def get_task_to_plan(self):
-        return self._task_to_plan
 
     def remove_planned_task(self):
+        """Clears the task to plan"""
         self._task_to_plan = ""
     
     def set_path(self, path):
+        """Sets the agent's path to a given one"""
         self._path = path
 
     def add_to_path(self, new_path):
+        """Appends to the agent's path"""
         self._path += new_path
 
     def get_next_pos(self):
+        """Returns the next position of the agent"""
         if self._path_index + 1 < len(self._path):
             return self._path[self._path_index + 1]
         return None
     
     def get_path_length(self):
-        """
-        number of steps remaining in agent's path
-        """
+        """Returns number of steps remaining in agent's path"""
         if self._path_index + 1 < len(self._path):
             return len(self._path)-self._path_index
         return 1
         
     def get_path_end(self):
+        """Returns the last position in the agent's path"""
         if self._path:
             return self._path[-1]
         else:
             return (self.get_pos().x, self.get_pos().y)
 
     def get_pos(self):
+        """Returns current position of the agent"""
         return Position(x=self._state.x_pos, y=self._state.y_pos, z=self._state.z_pos)
 
     def get_attitude(self):
@@ -313,6 +337,7 @@ class Quadrotor():
 
     def take_off(self):
         """Commands the drone to begin flying"""
+        self._is_flying = True
         if self._hardware_flag:
             self.pc.take_off(height=self._take_off_height)
             print(f'Agent [{self._id}] is Taking Off!!')
@@ -327,6 +352,7 @@ class Quadrotor():
 
     def land(self):
         """Commands the drone to stop flying"""
+        self._is_flying = False
         if self._hardware_flag:
             self.pc.land()
             # self.mc.land()

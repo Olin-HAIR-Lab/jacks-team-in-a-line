@@ -30,13 +30,13 @@ def define_env(map):
 
 if __name__ == '__main__':
     # load configuration file from YAML file
-    original_map = './base_config.yaml'
-    new_map = "new_map_config.yaml"
-    test_maps = ["test_1_config.yaml", "test_2_config.yaml",
-                 "test_3_config.yaml", "test_4_config.yaml"]
+    original_map = './maps/base_config.yaml'
+    hardware_debug_map = "./maps/hardware_debug_config.yaml"
+    three_drone_map = "./maps/three_drone_config.yaml"
+    test_maps = ["./maps/test_1_config.yaml", "./maps/test_2_config.yaml",
+                 "./maps/test_3_config.yaml", "./maps/test_4_config.yaml"]
 
-    active_map = new_map
-    with open(test_maps[1], 'r') as file:
+    with open(test_maps[0], 'r') as file:
         config = yaml.load(file, Loader=yaml.FullLoader)
 
     use_hardware = config['use_hardware']
@@ -163,7 +163,7 @@ if __name__ == '__main__':
         time.sleep(3)
 
     i = 0
-    while i < 100:
+    while True:
         # update the drone for it's next step
         gcs.update()
         # create a map of where the drone has gone
@@ -176,6 +176,9 @@ if __name__ == '__main__':
         # print(i+5)
         if use_hardware:
             time.sleep(time_delta)
+        
+        if not gcs.agents_active:
+            break
 
     for agent in agent_list.values():
         agent.land()
