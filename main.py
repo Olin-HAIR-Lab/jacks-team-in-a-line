@@ -36,7 +36,7 @@ if __name__ == '__main__':
     test_maps = ["./maps/test_1_config.yaml", "./maps/test_2_config.yaml",
                  "./maps/test_3_config.yaml", "./maps/test_4_config.yaml"]
 
-    with open(test_maps[0], 'r') as file:
+    with open(original_map, 'r') as file:
         config = yaml.load(file, Loader=yaml.FullLoader)
 
     use_hardware = config['use_hardware']

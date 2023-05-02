@@ -183,10 +183,7 @@ class GroundControlSystem():
         Returns:
             heuristic value: a float that represents the cost for this drone to complete this task
         """
-        distance = self.get_manhattan_distance(agent.get_pos(), task.pick_loc)
-        time = self.get_time_since_input(task.time_input)
-        cost = (distance*dist_weight-time*time_weight)/(task.priority+1)
-        return cost
+        return Heuristic(agent=agent, task=task)
 
     def get_time_since_input(self, time_input):
         """
@@ -194,24 +191,6 @@ class GroundControlSystem():
         """
         current_time=time.time()
         return current_time-time_input
-
-    def get_manhattan_distance(self, pos_1,pos_2):
-        """
-        Takes in 2 positions as 3 element lists [x,y,z] and finds the manhattan distance between them 
-        """
-        x_dist=pos_1.x-pos_2.x
-        y_dist=pos_1.y-pos_2.y
-        z_dist=pos_1.z-pos_2.z
-        return abs(x_dist)+abs(y_dist)+abs(z_dist)
-
-    def get_euclidian_distance(self, pos_1,pos_2):
-        """
-        Takes in 2 positions as 3 element lists [x,y,z] and finds the euclidian distance between them 
-        """
-        x_dist=pos_1.x-pos_2.x
-        y_dist=pos_1.y-pos_2.y
-        z_dist=pos_1.z-pos_2.z
-        return (x_dist**2+y_dist**2+z_dist**2)**0.5
 
     def min_zero_row(self, zero_mat, mark_zero):
         
@@ -512,7 +491,7 @@ class Heuristic:
     task : Task
     dist_weight : float = 1
     time_weight : float = .05
-    priority_weight : int = 10
+    priority_weight : int = .5
     # unsure about priority weighting, may cause problems
 
     def steps_left_in_path(self):
@@ -525,19 +504,23 @@ class Heuristic:
         """
         Takes in 2 positions as 3 element lists [x,y,z] and finds the euclidian (manhattan) distance between them 
         """
-        x_dist= pos_1.x-pos_2.x
-        y_dist= pos_1.y-pos_2.y
-        z_dist= pos_1.z-pos_2.z
-        return math.sqrt(abs(x_dist)^2+abs(y_dist)^2+abs(z_dist)^2)
+        x_dist= pos_1[0]-pos_2.x
+        y_dist= pos_1[1]-pos_2.y
+        return math.sqrt(abs(x_dist)**2+abs(y_dist)**2)
     
+    def get_manhattan_distance(self, pos_1, pos_2):
+        return abs(pos_1[0]-pos_2.x) + abs(pos_1[1]-pos_2.y)
+    
+    @property
     def cost(self):
-        distance_from_path = self.get_euclidian_distance(self.path_end_loc(), self.task.pick_loc)
-        steps_left = self.steps_left_in_path()
+        """Return total cost"""
+        distance_from_path = self.get_manhattan_distance(self.path_end_loc(), self.task.pick_loc)
+        steps_left = self.steps_left_in_path() * .1
         total_distance = distance_from_path + steps_left
-        time = time.time - self.task.time_input
+        curr_time = time.time() - self.task.time_input
         priority = self.task.priority * self.priority_weight
 
-        cost = total_distance - time + priority
+        cost = total_distance - curr_time + priority
         return cost
 
     def __float__(self):
