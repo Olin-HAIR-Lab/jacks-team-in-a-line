@@ -26,22 +26,23 @@ drop_loc:       [['D1', [1.8, 0.6]],
 
 map:
   dimensions:
-    x_max: 21
-    x_min: -9
-    y_max: 11
-    y_min: -9
+    x_max: 7
+    x_min: 0
+    y_max: 6
+    y_min: 0
+
   obstacles:
   - !!python/list
     - !!python/tuple
-      - 0
-      - -6
+      - 0.511046
+      - 1.4224 
     - !!python/tuple
-      - 12
-      - -3
+      - 0.511046
+      - 4.0132
   - !!python/list
     - !!python/tuple
-      - 0
-      - 3
+      - 2.577846
+      - 4.0132
     - !!python/tuple
-      - 12
-      - 6
+      - 2.577846
+      - 1.4224

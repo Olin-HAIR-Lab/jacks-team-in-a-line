@@ -1,7 +1,7 @@
 """Generates an environment to simulate the agents in using a .yaml file"""
 import numpy as np
 
-#
+
 def base_map(env):
     """Generates the map of the drone environment"""
     # Find the size of the environment

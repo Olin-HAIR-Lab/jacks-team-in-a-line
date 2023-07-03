@@ -7,24 +7,48 @@ import plotly.graph_objects as go
 from simulation.Simulation import Simulation
 from itertools import product
 
-#
+
 def define_env(map):
     """
     Take in the two corners of rectangles from the yaml file
     and define all the points as obstacles
     """
     env = map
-    corners = map["obstacles"]
+    corners_obst = map["obstacles"]
+    corners_bins = map["bins"]
+    corners_bases = map["bases"]
     obstacles = []
+    bins = []
+    bases = []
 
-    x_vals = []
-    y_vals = []
-    for pair in corners:
-        x_vals += [x for x in range(pair[0][0], pair[1][0] + 1)]
-        y_vals += [y for y in range(pair[0][1], pair[1][1] + 1)]
-        obstacles += product(x_vals, y_vals)
+    x_vals_obst = []
+    y_vals_obst = []
+    x_vals_bins = []
+    y_vals_bins = []
+    x_vals_bases = []
+    y_vals_bases = []
+    for pair in corners_obst:
+        x_vals_obst += [x for x in range(pair[0][0], pair[1][0] + 1)]
+        y_vals_obst += [y for y in range(pair[0][1], pair[1][1] + 1)]
+
+        obstacles += product(x_vals_obst, y_vals_obst)
+
+    for pair in corners_bins:
+        x_vals_bins += [x for x in range(pair[0][0], pair[1][0] + 1)]
+        y_vals_bins += [y for y in range(pair[0][1], pair[1][1] + 1)]
+
+        bins += product(x_vals_bins, y_vals_bins)
+
+    for pair in corners_bases:
+        x_vals_bases += [x for x in range(pair[0][0], pair[1][0] + 1)]
+        y_vals_bases += [y for y in range(pair[0][1], pair[1][1] + 1)]
+
+        bases += product(x_vals_bases, y_vals_bases)
 
     env["obstacles"] = list(set(obstacles))
+    env["bins"] = list(set(bins))
+    env["bases"] = list(set(bases))
+
     return env
 
 
@@ -33,12 +57,7 @@ if __name__ == "__main__":
     original_map = "./maps/base_config.yaml"
     hardware_debug_map = "./maps/hardware_debug_config.yaml"
     three_drone_map = "./maps/three_drone_config.yaml"
-    test_maps = [
-        "./maps/test_1_config.yaml",
-        "./maps/test_2_config.yaml",
-        "./maps/test_3_config.yaml",
-        "./maps/test_4_config.yaml",
-    ]
+    test_maps = ["./maps/base_config.yaml"]
 
     with open(test_maps[0], "r") as file:
         config = yaml.load(file, Loader=yaml.FullLoader)
