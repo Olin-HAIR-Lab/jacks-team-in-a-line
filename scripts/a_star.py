@@ -1,5 +1,5 @@
 """Implements A* pathfinding for the agents"""
-
+from copy import deepcopy
 
 class Node:
     """The base unit of the environment"""
@@ -24,7 +24,7 @@ class Node:
         return abs(self.pos[0] - other.pos[0]) + abs(self.pos[1] - other.pos[1])
 
 
-def astar(start_node_id, end_node_id, graph):
+def astar(start_node_id, end_node_id, init_graph):
     """Calculate the A* path between given nodes"""
     
     #TODO: Find corresponding node in the graph...
@@ -32,6 +32,8 @@ def astar(start_node_id, end_node_id, graph):
     # # Mark the initial and final nodes
     # start = Node(start_pos)
     # end = Node(end_pos)
+    graph = deepcopy(init_graph) #TODO: Check this out
+
     start = graph[start_node_id]
     end = graph[end_node_id]
 
@@ -61,7 +63,7 @@ def astar(start_node_id, end_node_id, graph):
             path = []
             c = q
             # Find the optimal path by checking the parent of each node
-            while c is not None:
+            while c is not None or c:
                 path.append(c.pos)
                 c = c.parent
             return path[::-1]
@@ -106,6 +108,7 @@ def astar(start_node_id, end_node_id, graph):
         # for child in children:
         for child_id in q.children:
             child = graph[child_id]
+
             child.g = q.g + 1
             child.h = ((child.pos[0] - end.pos[0]) ** 2) + (
                 (child.pos[1] - end.pos[1]) ** 2
@@ -113,10 +116,14 @@ def astar(start_node_id, end_node_id, graph):
             child.f = child.g + child.h
             # Check that the child is not previously explored
             if child not in open_list and child not in closed_list:
+                # assign parent
+                child.parent = q
                 open_list.append(child)
             for n in open_list:
                 # If the child is already in the list, choose the path with the lower cost function
                 if child == n and n.f > child.f:
+                    # assign parent
+                    child.parent = q
                     open_list.append(child)
 
         # Adds this node to the list of explored nodes
