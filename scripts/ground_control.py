@@ -7,7 +7,7 @@ import math
 import time
 import networkx as nx
 from scripts.a_star import astar
-from scripts.generate_map import base_map, to_astar, from_astar
+from scripts.generate_map import base_map, to_astar, from_astar, create_graph, get_node_id
 from dataclasses import dataclass
 from scripts.Quadrotor import Quadrotor
 from scripts.utils import Task
@@ -26,7 +26,8 @@ class GroundControlSystem:
         self._agents_active = False
 
         self._map = base_map(env)
-        # print(self._map)
+        self._graph = create_graph(env)
+        # print(self._graph)
 
     def update(self):
         self._agents_active = False
@@ -35,11 +36,16 @@ class GroundControlSystem:
                 self._agents_active = True
             if agent.path_complete():
                 if not agent.at_base_station():
-                    end_point = to_astar(agent.get_path_end(), self._env)
-                    start_loc = to_astar(
-                        (agent.base_station.x, agent.base_station.y), self._env
+                    # end_point = to_astar(agent.get_path_end(), self._env)
+                    # start_loc = to_astar(
+                    #     (agent.base_station.x, agent.base_station.y), self._env
+                    # )
+                    # return_path = astar(end_point, start_loc, self._map)
+                    end_point = get_node_id(agent.get_path_end(), self._graph)
+                    start_loc = get_node_id(
+                        (agent.base_station.x, agent.base_station.y), self._graph
                     )
-                    return_path = astar(end_point, start_loc, self._map)
+                    return_path = astar(end_point, start_loc, self._graph)
                     agent.clear_tasks_and_path()
                     agent.add_to_path(from_astar(return_path, self._env))
                     agent.add_to_path(
@@ -62,16 +68,23 @@ class GroundControlSystem:
             agent = self._agent_list[agent_id]
             if agent.task_to_plan:
                 task = self._task_list[agent.task_to_plan]
-                agent_pos = to_astar(agent.get_path_end(), self._env)
-                pick_loc = to_astar((task.pick_loc.x, task.pick_loc.y), self._env)
-                drop_loc = to_astar((task.drop_loc.x, task.drop_loc.y), self._env)
+                # agent_pos = to_astar(agent.get_path_end(), self._env)
+                # pick_loc = to_astar((task.pick_loc.x, task.pick_loc.y), self._env)
+                # drop_loc = to_astar((task.drop_loc.x, task.drop_loc.y), self._env)
+
+                agent_pos = get_node_id(agent.get_path_end(), self._graph)
+                pick_loc = get_node_id((task.pick_loc.x, task.pick_loc.y), self._graph)
+                drop_loc = get_node_id((task.drop_loc.x, task.drop_loc.y), self._graph)
 
                 target_points = [agent_pos, pick_loc, drop_loc]
 
                 raw_path = []
                 for loc_i in range(2):
+                    # astar_path = astar(
+                    #     target_points[loc_i], target_points[loc_i + 1], self._map
+                    # )
                     astar_path = astar(
-                        target_points[loc_i], target_points[loc_i + 1], self._map
+                        target_points[loc_i], target_points[loc_i + 1], self._graph
                     )
 
                     raw_path += astar_path
@@ -349,49 +362,49 @@ class GroundControlSystem:
         8 points immeditaely surrounding it (and the point itself)
         """
         hitbox = []
-        neighbors = {
-            "A4": "A5",
-            "A5": ["A4", "A6"],
-            "A6": ["A5", "A7"],
-            "A7": ["A6", "A8"],
-            "A12": "A13",
-            "A13": ["A12", "A14"],
-            "A14": ["A13", "A15"],
-            "A15": ["A14", "A16"],
-            "A16": "A15",
-            "B1": "B2",
-            "B2": ["B1", "B3"],
-            "B3": ["B2", "B4"],
-            "B4": ["B3", "B5"],
-            "B5": "B4",
-        }
-        # neighbors = [
-        #    (0, -1),
-        #    (0, 1),
-        #    (-1, 0),
-        #    (1, 0),
-        #    (0, 0),
-        #    (-1, -1),
-        #    (1, 1),
-        #    (-1, 1),
-        #    (1, -1),
-        #    (-2, 2),
-        #    (-1, 2),
-        #    (0, 2),
-        #    (1, 2),
-        #    (2, 2),
-        #    (2, 1),
-        #    (2, 0),
-        #    (2, -1),
-        #    (2, -2),
-        #    (-1, -2),
-        #    (0, -2),
-        #    (-1, -2),
-        #    (-2, -2),
-        #    (-2, -1),
-        #    (-2, 0),
-        #    (-2, 1),
-        # ]
+        # neighbors = {
+        #     "A4": "A5",
+        #     "A5": ["A4", "A6"],
+        #     "A6": ["A5", "A7"],
+        #     "A7": ["A6", "A8"],
+        #     "A12": "A13",
+        #     "A13": ["A12", "A14"],
+        #     "A14": ["A13", "A15"],
+        #     "A15": ["A14", "A16"],
+        #     "A16": "A15",
+        #     "B1": "B2",
+        #     "B2": ["B1", "B3"],
+        #     "B3": ["B2", "B4"],
+        #     "B4": ["B3", "B5"],
+        #     "B5": "B4",
+        # }
+        neighbors = [
+           (0, -1),
+           (0, 1),
+           (-1, 0),
+           (1, 0),
+           (0, 0),
+           (-1, -1),
+           (1, 1),
+           (-1, 1),
+           (1, -1),
+           (-2, 2),
+           (-1, 2),
+           (0, 2),
+           (1, 2),
+           (2, 2),
+           (2, 1),
+           (2, 0),
+           (2, -1),
+           (2, -2),
+           (-1, -2),
+           (0, -2),
+           (-1, -2),
+           (-2, -2),
+           (-2, -1),
+           (-2, 0),
+           (-2, 1),
+        ]
 
         # neighbors = [(0, -.1), (0, .1), (-.1, 0), (.1, 0), \
         #                     (-.1, -.1), (.1, .1), (-.1, .1), (.1, -.1), (0,0),
@@ -401,13 +414,13 @@ class GroundControlSystem:
         # List of node dependencies {"A4" : "A5", "A5": ["A4", "A6"], "A6": ["A5", "A7"], "A7": ["A6", "A8"], "A12": "A13", "A13": ["A12", "A14"], "A14": ["A13", "A15"], "A15": ["A14", "A16"], "A16": "A15", "B1": "B2", "B2": ["B1", "B3"], "B3":["B2", "B4"], "B4": ["B3", "B5"], "B5": "B4"}
 
         # hitbox = [tuple(map(sum, zip(pos, n))) for n in neighbors]")
-        print(f"Current position {pos}")
-        for neighbor in neighbors:
-            hitbox_point_x = 10 * (round(pos[0] + neighbor[0], 1))
-            print(f"Hitbox point X: {hitbox_point_x}")
-            hitbox_point_y = 10 * (round(pos[1] + neighbor[1], 1))
-            print(f"Hitbox point Y: {hitbox_point_y}")
-            hitbox.append((hitbox_point_x, hitbox_point_y))
+        # print(f"Current position {pos}")
+        # for neighbor in neighbors:
+        #     hitbox_point_x = 10 * (round(pos[0] + neighbor[0], 1))
+        #     print(f"Hitbox point X: {hitbox_point_x}")
+        #     hitbox_point_y = 10 * (round(pos[1] + neighbor[1], 1))
+        #     print(f"Hitbox point Y: {hitbox_point_y}")
+        #     hitbox.append((hitbox_point_x, hitbox_point_y))
         return hitbox
 
     @DeprecationWarning

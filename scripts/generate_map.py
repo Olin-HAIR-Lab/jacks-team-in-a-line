@@ -1,6 +1,53 @@
 """Generates an environment to simulate the agents in using a .yaml file"""
 import numpy as np
 
+class Node:
+    """The base unit of the environment"""
+
+    def __init__(self, id=None, pos=None, parent=None, children=None):
+        self.id = id
+        self.pos = pos
+        self.parent = parent
+        self.children = children
+
+        # Total cost function
+        self.f = 0
+        # Cost to reach node function
+        self.g = 0
+        # Heuristic function
+        self.h = 0
+
+    def __eq__(self, other):
+        """Check if two nodes are the same"""
+        return self.pos == other.pos
+
+    def manhattan_dist(self, other):
+        """Find the manhattan distance between two nodes"""
+        return abs(self.pos[0] - other.pos[0]) + abs(self.pos[1] - other.pos[1])
+    
+    def euclidean_dist(self, point):
+        """Finds the euclidean distance between node and a point [x, y]"""
+        return np.sqrt((self.pos[0] - point[0])**2 + (self.pos[1] - point[1])**2)
+    
+
+def create_graph(env):
+    """Generates a directed graph of nodes describing the environment"""
+
+    graph = dict()
+
+    # iterate through nodes in env and create Node objects
+    nodes = env["nodes"]
+    for node in nodes:
+        n = Node(id=node[0], pos=[node[1][0], node[1][1]])
+        n.children = []
+        for child in node[2]:
+            n.children.append(child)
+    
+        # add node to graph
+        graph[n.id] = n
+
+    return graph
+
 
 def base_map(env):
     """Generates the map of the drone environment"""
@@ -40,3 +87,21 @@ def from_astar(path, env):
             new_path.append((((point[1] + x_min) / 10), ((point[0] + y_min) / 10)))
 
     return new_path
+
+
+def get_node_id(point, graph):
+    """Returns the corresponding (or closest) node to the given position"""
+
+    min_dist = 999
+    min_id = None
+
+    # iterate over all the nodes in the graph to find the one closest to the [x,y] point
+    for node in graph.values():
+        dist = node.euclidean_dist(point)
+        if dist < min_dist:
+            min_id = node.id
+            min_dist = dist
+    #         print(f"Min node is {min_id} and distance is {dist}")
+    # print("-------------------")
+
+    return min_id    
