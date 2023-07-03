@@ -51,6 +51,19 @@ class Simulation:
             agent_traces["y"] += agent._y_track
             agent_traces["z"] += agent._z_track
             agent_colors.append(agent._color)
+            # TO DO: figure out how to add the rectangle around the moving point
+            # Attemped to add a rectangle feature that would move with the centerpoint of the drone
+            # fig_animated.add_shape(
+            #     type="rect",
+            #     x0=agent._state.x_pos - 1.5,
+            #     y0=agent._state.y_pos - 1.5,
+            #     x1=agent._state.x_pos + 1.5,
+            #     y1=agent._state.y_pos + 1.5,
+            #     line=dict(color=agent._color),
+            #     fillcolor=agent._color,
+            # )
+
+        print(f"xpos: {agent._state.x_pos}, y pos: {agent._state.y_pos}")
 
         df = pd.DataFrame(data=agent_traces)
 
@@ -66,7 +79,7 @@ class Simulation:
             range_y=[-1, 1],
         )
 
-        self._ply_fig_animated.update_traces(marker=dict(size=15, symbol="circle"))
+        self._ply_fig_animated.update_traces(marker=dict(size=8, symbol="circle"))
         self.create_2D_plot(self._ply_fig_animated)
         self._ply_fig_animated.show()
 
@@ -150,6 +163,16 @@ class Simulation:
                 line=dict(color="Blue"),
                 fillcolor="Blue",
             )
+        # plot all nodes
+        nodes = self._env["nodes"]
+
+        for node in nodes:
+            fig.add_scatter(
+                x=[node[1][0]],
+                y=[node[1][1]],
+                mode="markers",
+                marker=dict(color="LightGrey", size=15, line_width=3, symbol="x-thin"),
+            )
 
         # plot agent start locations
         for agent in self._agent_list.values():
@@ -180,7 +203,7 @@ class Simulation:
             x=drop_x,
             y=drop_y,
             mode="markers",
-            marker=dict(color="DarkGreen", size=15, symbol="square"),
+            marker=dict(color="DarkGreen", size=15, symbol="circle"),
             name="Drop locations",
         )
 

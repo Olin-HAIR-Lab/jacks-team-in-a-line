@@ -86,6 +86,7 @@ if __name__ == "__main__":
     pick_locations = config["pick_loc"]
     drop_locations = config["drop_loc"]
 
+    # create node location list
     print("-----------------------")
     print("Task List")
     print("-----------------------")
