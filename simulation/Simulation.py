@@ -43,7 +43,7 @@ class Simulation:
             "z": [],
             "size": 1,
         }
-        agent_colors = []
+        agent_colors, agent_symbol = [], []
         for agent in self._agent_list.values():
             agent_traces["agent_id"] += [agent._id] * len(agent._x_track)
             agent_traces["step"] += list(range(len(agent._x_track)))
@@ -51,6 +51,7 @@ class Simulation:
             agent_traces["y"] += agent._y_track
             agent_traces["z"] += agent._z_track
             agent_colors.append(agent._color)
+            agent_symbol.append(1)
             # TO DO: figure out how to add the rectangle around the moving point
             # Attemped to add a rectangle feature that would move with the centerpoint of the drone
             # fig_animated.add_shape(
@@ -62,10 +63,13 @@ class Simulation:
             #     line=dict(color=agent._color),
             #     fillcolor=agent._color,
             # )
+        # print(f"xpos: {agent._state.x_pos}, y pos: {agent._state.y_pos}")
 
-        print(f"xpos: {agent._state.x_pos}, y pos: {agent._state.y_pos}")
+        df = pd.DataFrame(data=agent_traces)    
 
-        df = pd.DataFrame(data=agent_traces)
+        agent_symbol = [0] * len(agent_traces["x"])
+        symbols = ['square-dot', 'circle', 'square', 'diamond']
+        marker_sizes = [40] * len(agent_traces["x"])
 
         self._ply_fig_animated = px.scatter(
             df,
@@ -75,11 +79,16 @@ class Simulation:
             animation_group="agent_id",
             color="agent_id",
             color_discrete_sequence=agent_colors,
+            symbol=agent_symbol,
+            symbol_sequence=symbols,
+            size=marker_sizes,
+            size_max=80,
             range_x=[-1, 2],
             range_y=[-1, 1],
         )
 
-        self._ply_fig_animated.update_traces(marker=dict(size=8, symbol="circle"))
+        # self._ply_fig_animated.update_traces(marker=dict(size=25, symbol="circle"))
+        # self._ply_fig_animated.update_traces(marker=dict(size=25, symbol="square-dot"))
         self.create_2D_plot(self._ply_fig_animated)
         self._ply_fig_animated.show()
 
@@ -180,7 +189,7 @@ class Simulation:
                 x=[agent.base_station.x],
                 y=[agent.base_station.y],
                 mode="markers",
-                marker=dict(color=agent._color, size=15, symbol="arrow-right"),
+                marker=dict(color=agent._color, size=15, symbol="arrow-left"),
                 name=f"{agent._id} Base Station",
             )
 
@@ -210,7 +219,7 @@ class Simulation:
         fig.update_xaxes(range=[0, 7], constrain="domain")
         fig.update_yaxes(range=[0, 5.5], scaleanchor="x", scaleratio=1)
 
-        fig.update_shapes(dict(xref="x", yref="y"))
+        # fig.update_shapes(dict(xref="x", yref="y"))
 
     def create_3D_plot(self, fig):
         """creates 3D plot showing agent start locations and task locations"""
