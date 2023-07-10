@@ -307,7 +307,8 @@ class Quadrotor():
 
     def add_to_path(self, new_path):
         """Appends to the agent's path"""
-        self._path += new_path
+        if new_path is not None:
+            self._path += new_path
 
     def get_next_pos(self):
         """Returns the next position of the agent"""

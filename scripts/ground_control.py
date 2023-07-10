@@ -47,7 +47,8 @@ class GroundControlSystem:
                     )
                     return_path = astar(end_point, start_loc, self._graph)
                     agent.clear_tasks_and_path()
-                    agent.add_to_path(from_astar(return_path, self._env))
+                    # agent.add_to_path(from_astar(return_path, self._env))
+                    agent.add_to_path(return_path)
                     agent.add_to_path(
                         [(agent.base_station.x, agent.base_station.y)] * 2
                     )
@@ -89,7 +90,8 @@ class GroundControlSystem:
 
                     raw_path += astar_path
 
-                    agent.add_to_path(from_astar(astar_path, self._env))
+                    # agent.add_to_path(from_astar(astar_path, self._env))
+                    agent.add_to_path(astar_path)
                     agent.remove_planned_task()
                 print(agent._path)
 
