@@ -10,7 +10,7 @@ from scripts.a_star import astar
 from scripts.generate_map import base_map, to_astar, from_astar, create_graph, get_node_id
 from dataclasses import dataclass
 from scripts.Quadrotor import Quadrotor
-from scripts.utils import Task
+from scripts.utils import Task, Node
 
 
 class GroundControlSystem:
@@ -49,14 +49,17 @@ class GroundControlSystem:
                     agent.clear_tasks_and_path()
                     # agent.add_to_path(from_astar(return_path, self._env))
                     agent.add_to_path(return_path)
-                    agent.add_to_path(
-                        [(agent.base_station.x, agent.base_station.y)] * 2
-                    )
+                    # agent.add_to_path(
+                    #     [(agent.base_station.x, agent.base_station.y)] * 2
+                    # )
+                    agent.add_to_path([Node(pos=[agent.base_station.x, agent.base_station.y])] * 2)
+                    
                 else:
                     agent.clear_tasks_and_path()
-                    agent.add_to_path(
-                        [(agent.base_station.x, agent.base_station.y)] * 2
-                    )
+                    # agent.add_to_path(
+                    #     [(agent.base_station.x, agent.base_station.y)] * 2
+                    # )
+                    agent.add_to_path([Node(pos=[agent.base_station.x, agent.base_station.y])] * 2)
                     agent.set_tasks_complete(True)
             if agent.available_for_task() and agent_id not in self._available_agents:
                 self._available_agents.append(agent_id)
@@ -93,12 +96,15 @@ class GroundControlSystem:
                     # agent.add_to_path(from_astar(astar_path, self._env))
                     agent.add_to_path(astar_path)
                     agent.remove_planned_task()
-                print(agent._path)
+               
+                # print(agent._path)
 
         self.find_collisions()
 
         for agent in self._agent_list.values():
             agent.update()
+
+  
 
     @property
     def agents_active(self):
@@ -508,52 +514,111 @@ class GroundControlSystem:
         preferbaly don't collide pls :D
         """
 
-        all_hitboxes = []
-        # find all the hitboxes and adds the points to all_hitboxes list
+
+        # find the max agent path length
+        K = 0
         for agent in self._agent_list.values():
-            all_hitboxes += self.get_hitbox(agent.get_next_pos())
-        # print(all_hitboxes)
+            K = max(K, agent.get_path_length())
 
-        # find where hitboxes overlap
-        duplicates = []
-        duplicates = [x for x in all_hitboxes if all_hitboxes.count(x) > 1]
-        # print(f"duplicates: {duplicates}")
+        # iterate through K time steps to resolve all overlaps
+        for k in range(K):
+            # define the priority order of the agents
+            agent_order = self.define_agent_priority(k)
 
-        bad_agents = []
-        bad_agent_ids = []
-        # if an agent enters an overlapping hitbox, add it to a list to be checked for collisions
-        for agent in self._agent_list.values():
-            if agent.get_next_pos() in duplicates:
-                bad_agents.append(agent)
-                bad_agent_ids.append(agent._id)
-        # print(f"bad agents: {bad_agent_ids}")
+            # get all overlapping agents ids
+            overlapping_agents = self.find_overlapping_agents(agent_order, k)
 
-        # is it good code? no. but that's okay
-        fixed_pairs = []
+            # cycle through until there's no overlap along the priority list
+            while overlapping_agents:
+                self.fix_overlaps(agent_order, overlapping_agents, k)
+                overlapping_agents.clear()
 
-        # check and reroute all bad agents to avoid collisions
-        for agent_a in bad_agents:
-            # print(f"bad agent a: {agent_a}")
-            for agent_b in bad_agents:
-                # print(f"agent b: {agent_b}")
-                # if the drones haven't been fixed already, are not the same drone,
-                # and are colliding, reroute the lower priority drone
-                if (
-                    {agent_a, agent_b} not in fixed_pairs
-                    and agent_a.id != agent_b.id
-                    and agent_b.get_next_pos()
-                    in self.get_hitbox(agent_a.get_next_pos())
-                ):
-                    self._fix_collision(agent_b, agent_a)
-                    fixed_pairs.append({agent_a, agent_b})
-                if (
-                    {agent_a, agent_b} not in fixed_pairs
-                    and agent_a.id != agent_b.id
-                    and agent_a.get_next_pos()
-                    in self.get_hitbox(agent_b.get_next_pos())
-                ):
-                    self._fix_collision(agent_a, agent_b)
-                    fixed_pairs.append({agent_a, agent_b})
+                overlapping_agents = self.find_overlapping_agents(agent_order, k)
+
+
+        # all_hitboxes = []
+        # # find all the hitboxes and adds the points to all_hitboxes list
+        # for agent in self._agent_list.values():
+        #     all_hitboxes += self.get_hitbox(agent.get_next_pos())
+        # # print(all_hitboxes)
+
+        # # find where hitboxes overlap
+        # duplicates = []
+        # duplicates = [x for x in all_hitboxes if all_hitboxes.count(x) > 1]
+        # # print(f"duplicates: {duplicates}")
+
+        # bad_agents = []
+        # bad_agent_ids = []
+        # # if an agent enters an overlapping hitbox, add it to a list to be checked for collisions
+        # for agent in self._agent_list.values():
+        #     if agent.get_next_pos() in duplicates:
+        #         bad_agents.append(agent)
+        #         bad_agent_ids.append(agent._id)
+        # # print(f"bad agents: {bad_agent_ids}")
+
+        # # is it good code? no. but that's okay
+        # fixed_pairs = []
+
+        # # check and reroute all bad agents to avoid collisions
+        # for agent_a in bad_agents:
+        #     # print(f"bad agent a: {agent_a}")
+        #     for agent_b in bad_agents:
+        #         # print(f"agent b: {agent_b}")
+        #         # if the drones haven't been fixed already, are not the same drone,
+        #         # and are colliding, reroute the lower priority drone
+        #         if (
+        #             {agent_a, agent_b} not in fixed_pairs
+        #             and agent_a.id != agent_b.id
+        #             and agent_b.get_next_pos()
+        #             in self.get_hitbox(agent_a.get_next_pos())
+        #         ):
+        #             self._fix_collision(agent_b, agent_a)
+        #             fixed_pairs.append({agent_a, agent_b})
+        #         if (
+        #             {agent_a, agent_b} not in fixed_pairs
+        #             and agent_a.id != agent_b.id
+        #             and agent_a.get_next_pos()
+        #             in self.get_hitbox(agent_b.get_next_pos())
+        #         ):
+        #             self._fix_collision(agent_a, agent_b)
+        #             fixed_pairs.append({agent_a, agent_b})
+
+    def find_overlapping_agents(self, priority_order, path_idx):
+        """ Add this ... """
+
+        node_list = []
+        for id in priority_order:
+            agent_path = self._agent_list[id].get_path()
+
+            if len(agent_path) <= path_idx:
+                node_list.append("")
+            else:
+                node_list.append(agent_path[path_idx].id)
+        
+        overlaps = [idx for idx, id in enumerate(node_list) if node_list.count(id) > 1]
+
+        # print(node_list)
+        return overlaps
+        
+
+    def define_agent_priority(self, path_idx):
+        """ """
+        return ['HB4', 'HB3', 'HB2', 'HB1']
+    
+
+    def fix_overlaps(self, agent_order, overlapping_agents, path_idx):
+        """ """
+        
+        # delay the lower priority agent by adding an additional node at the path_idx
+        lower_priority_agent = agent_order[overlapping_agents[-1]] #TODO: how about when multiple agents overlap?
+        agent_path = self._agent_list[lower_priority_agent].get_path()
+        # duplicate the node at the path index
+        agent_path.insert(path_idx, agent_path[path_idx-1])
+
+        # update agent's path
+        self._agent_list[lower_priority_agent].set_path(agent_path)
+
+        print(overlapping_agents)
 
 
 @dataclass
@@ -602,7 +667,7 @@ class Heuristic:
         return math.sqrt(abs(x_dist) ** 2 + abs(y_dist) ** 2)
 
     def get_manhattan_distance(self, pos_1, pos_2):
-        return abs(pos_1[0] - pos_2.x) + abs(pos_1[1] - pos_2.y)
+        return abs(pos_1.pos[0] - pos_2.x) + abs(pos_1.pos[1] - pos_2.y)
 
     @property
     def cost(self):

@@ -25,8 +25,12 @@ class Node:
         """Find the manhattan distance between two nodes"""
         return abs(self.pos[0] - other.pos[0]) + abs(self.pos[1] - other.pos[1])
     
-    def euclidean_dist(self, point):
-        """Finds the euclidean distance between node and a point [x, y]"""
+    def euclidean_dist_node(self, node):
+        """Finds the euclidean distance between node and another node"""
+        return np.sqrt((self.pos[0] - node.pos[0])**2 + (self.pos[1] - node.pos[1])**2)
+    
+    def euclidean_dist_point(self, point):
+        """Finds the euclidean distance between node and a point"""
         return np.sqrt((self.pos[0] - point[0])**2 + (self.pos[1] - point[1])**2)
     
 
@@ -97,7 +101,10 @@ def get_node_id(point, graph):
 
     # iterate over all the nodes in the graph to find the one closest to the [x,y] point
     for node in graph.values():
-        dist = node.euclidean_dist(point)
+        if isinstance(point, tuple):
+            dist = node.euclidean_dist_point(point)
+        else:
+            dist = node.euclidean_dist_node(point)
         if dist < min_dist:
             min_id = node.id
             min_dist = dist

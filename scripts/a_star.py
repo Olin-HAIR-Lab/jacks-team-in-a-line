@@ -64,7 +64,8 @@ def astar(start_node_id, end_node_id, init_graph):
             c = q
             # Find the optimal path by checking the parent of each node
             while c is not None or c:
-                path.append(c.pos)
+                # path.append(c.pos)
+                path.append(c)
                 c = c.parent
             return path[::-1]
 
