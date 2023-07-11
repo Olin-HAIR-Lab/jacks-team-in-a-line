@@ -452,38 +452,38 @@ map:
   bins: 
   - !!python/list 
     - !!python/tuple
-      - 88
+      - 12
       - -179
     - !!python/tuple
-      - 79
+      - 3
       - -171 
   - !!python/list
     - !!python/tuple
-      - 101
+      - 39
       - -179
     - !!python/tuple
-      - 91
+      - 30
       - -171
   - !!python/list
+    - !!python/tuple
+      - 67
+      - -179
+    - !!python/tuple
+      - 58
+      - -171
+  - !!python/list
+    - !!python/tuple
+      - 94
+      - -179
+    - !!python/tuple
+      - 85
+      - -171
+  - !!python/list
+    - !!python/tuple
+      - 122 
+      - -179
     - !!python/tuple
       - 113
-      - -179
-    - !!python/tuple
-      - 104
-      - -171
-  - !!python/list
-    - !!python/tuple
-      - 125
-      - -179
-    - !!python/tuple
-      - 116
-      - -171
-  - !!python/list
-    - !!python/tuple
-      - 137
-      - -179
-    - !!python/tuple
-      - 128
       - -171
   - !!python/list
     - !!python/tuple
