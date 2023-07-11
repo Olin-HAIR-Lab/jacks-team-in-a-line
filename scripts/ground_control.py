@@ -32,35 +32,28 @@ class GroundControlSystem:
     def update(self):
         self._agents_active = False
         for agent_id, agent in self._agent_list.items():
+            # set agent as active if task is incomplete
             if not agent.tasks_complete:
                 self._agents_active = True
+            # check if agent is at the end of it's path
             if agent.path_complete():
+                # if agent is not at the base station, plan a path to the base station
                 if not agent.at_base_station():
-                    # end_point = to_astar(agent.get_path_end(), self._env)
-                    # start_loc = to_astar(
-                    #     (agent.base_station.x, agent.base_station.y), self._env
-                    # )
-                    # return_path = astar(end_point, start_loc, self._map)
                     end_point = get_node_id(agent.get_path_end(), self._graph)
-                    start_loc = get_node_id(
+                    base_loc = get_node_id(
                         (agent.base_station.x, agent.base_station.y), self._graph
                     )
-                    return_path = astar(end_point, start_loc, self._graph)
+                    return_path = astar(end_point, base_loc, self._graph)
                     agent.clear_tasks_and_path()
-                    # agent.add_to_path(from_astar(return_path, self._env))
                     agent.add_to_path(return_path)
-                    # agent.add_to_path(
-                    #     [(agent.base_station.x, agent.base_station.y)] * 2
-                    # )
                     agent.add_to_path([Node(pos=[agent.base_station.x, agent.base_station.y])] * 2)
-                    
+                
+                # if agent is at base station, add base node and set task as complete
                 else:
                     agent.clear_tasks_and_path()
-                    # agent.add_to_path(
-                    #     [(agent.base_station.x, agent.base_station.y)] * 2
-                    # )
                     agent.add_to_path([Node(pos=[agent.base_station.x, agent.base_station.y])] * 2)
                     agent.set_tasks_complete(True)
+
             if agent.available_for_task() and agent_id not in self._available_agents:
                 self._available_agents.append(agent_id)
             elif not agent.available_for_task() and agent_id in self._available_agents:
@@ -72,34 +65,30 @@ class GroundControlSystem:
             agent = self._agent_list[agent_id]
             if agent.task_to_plan:
                 task = self._task_list[agent.task_to_plan]
-                # agent_pos = to_astar(agent.get_path_end(), self._env)
-                # pick_loc = to_astar((task.pick_loc.x, task.pick_loc.y), self._env)
-                # drop_loc = to_astar((task.drop_loc.x, task.drop_loc.y), self._env)
 
-                agent_pos = get_node_id(agent.get_path_end(), self._graph)
+                base_loc = get_node_id(agent.get_path_end(), self._graph)
                 pick_loc = get_node_id((task.pick_loc.x, task.pick_loc.y), self._graph)
                 drop_loc = get_node_id((task.drop_loc.x, task.drop_loc.y), self._graph)
 
-                target_points = [agent_pos, pick_loc, drop_loc]
-
-                raw_path = []
-                for loc_i in range(2):
-                    # astar_path = astar(
-                    #     target_points[loc_i], target_points[loc_i + 1], self._map
-                    # )
-                    astar_path = astar(
-                        target_points[loc_i], target_points[loc_i + 1], self._graph
-                    )
-
-                    raw_path += astar_path
-
-                    # agent.add_to_path(from_astar(astar_path, self._env))
-                    agent.add_to_path(astar_path)
-                    agent.remove_planned_task()
+                # plan and add paths to agent path
+                # base_loc -> pick_loc
+                astar_path = astar(base_loc, pick_loc, self._graph)
+                agent.add_to_path(astar_path)
+                    # agent stays at pick location for two timesteps
+                agent.add_to_path(Node(id=pick_loc, pos=[task.pick_loc.x, task.pick_loc.y]))
+                # pick_loc -> drop_loc
+                astar_path = astar(pick_loc, drop_loc, self._graph)
+                agent.add_to_path(astar_path)
+                    # agent stays at drop location for two timesteps
+                agent.add_to_path(Node(id=drop_loc, pos=[task.drop_loc.x, task.drop_loc.y]))
+                # drop_loc -> base_loc
+                astar_path = astar(drop_loc, base_loc, self._graph)
+                agent.add_to_path(astar_path)
+                agent.add_to_path(Node(id=base_loc, pos=[agent.base_station.x, agent.base_station.y]))
                
-                # print(agent._path)
+                agent.remove_planned_task()
 
-        self.find_collisions()
+        self.repair_conflicts()
 
         for agent in self._agent_list.values():
             agent.update()
@@ -364,156 +353,10 @@ class GroundControlSystem:
             ans_mat[pos[i][0], pos[i][1]] = mat[pos[i][0], pos[i][1]]
         return total, ans_mat
 
-    def get_hitbox(self, pos):
+    def repair_conflicts(self):
         """
-        Given a center position, returns a list containing the
-        8 points immeditaely surrounding it (and the point itself)
+        Performs the local repair operation by stepping through the agent paths to find and fix any overlaps
         """
-        hitbox = []
-        # neighbors = {
-        #     "A4": "A5",
-        #     "A5": ["A4", "A6"],
-        #     "A6": ["A5", "A7"],
-        #     "A7": ["A6", "A8"],
-        #     "A12": "A13",
-        #     "A13": ["A12", "A14"],
-        #     "A14": ["A13", "A15"],
-        #     "A15": ["A14", "A16"],
-        #     "A16": "A15",
-        #     "B1": "B2",
-        #     "B2": ["B1", "B3"],
-        #     "B3": ["B2", "B4"],
-        #     "B4": ["B3", "B5"],
-        #     "B5": "B4",
-        # }
-        neighbors = [
-           (0, -1),
-           (0, 1),
-           (-1, 0),
-           (1, 0),
-           (0, 0),
-           (-1, -1),
-           (1, 1),
-           (-1, 1),
-           (1, -1),
-           (-2, 2),
-           (-1, 2),
-           (0, 2),
-           (1, 2),
-           (2, 2),
-           (2, 1),
-           (2, 0),
-           (2, -1),
-           (2, -2),
-           (-1, -2),
-           (0, -2),
-           (-1, -2),
-           (-2, -2),
-           (-2, -1),
-           (-2, 0),
-           (-2, 1),
-        ]
-
-        # neighbors = [(0, -.1), (0, .1), (-.1, 0), (.1, 0), \
-        #                     (-.1, -.1), (.1, .1), (-.1, .1), (.1, -.1), (0,0),
-        #                     (0,-0.2), (0.1,-0.2), (0.2,-0.2), (-.1,-0.2), (-.2,-0.2),
-        #                     (0,0.2), (0.1,0.2), (0.2,0.2), (-.1,0.2), (-.2,0.2),
-        #                     (0.2,-0.1), (0.2,0.1), (0.2,0), (-0.2,-0.1), (-.2,.1), (-.2,0)]
-        # List of node dependencies {"A4" : "A5", "A5": ["A4", "A6"], "A6": ["A5", "A7"], "A7": ["A6", "A8"], "A12": "A13", "A13": ["A12", "A14"], "A14": ["A13", "A15"], "A15": ["A14", "A16"], "A16": "A15", "B1": "B2", "B2": ["B1", "B3"], "B3":["B2", "B4"], "B4": ["B3", "B5"], "B5": "B4"}
-
-        # hitbox = [tuple(map(sum, zip(pos, n))) for n in neighbors]")
-        # print(f"Current position {pos}")
-        # for neighbor in neighbors:
-        #     hitbox_point_x = 10 * (round(pos[0] + neighbor[0], 1))
-        #     print(f"Hitbox point X: {hitbox_point_x}")
-        #     hitbox_point_y = 10 * (round(pos[1] + neighbor[1], 1))
-        #     print(f"Hitbox point Y: {hitbox_point_y}")
-        #     hitbox.append((hitbox_point_x, hitbox_point_y))
-        return hitbox
-
-    @DeprecationWarning
-    def init_astar(self):
-        for agent in self._agent_list.values():
-            for loc_i in range(len(agent._task_queue) - 1):
-                agent._path += astar(
-                    agent._task_queue[loc_i], agent._task_queue[loc_i + 1], self._env
-                )
-
-        for agent in self._agent_list.values():
-            print(agent._path)
-
-    def _fix_collision(self, agent_a, agent_b):
-        """
-        Reroutes lower priority drone in collision to stay put or dodge away from collision
-        """
-        # Find the agents current positons and where they are travelling
-        a_pos = agent_a.get_path_pos()
-        a_next_pos = agent_a.get_next_pos()
-        b_pos = agent_b.get_path_pos()
-        b_next_pos = agent_b.get_next_pos()
-
-        # Default to lower prioity drone waits, but if there would be a collision,
-        # find the best place to move that avoids the collision
-        if b_next_pos == a_pos:
-            a_next_pos = self.find_best_move(agent_a)
-        else:
-            a_next_pos = (a_pos[0], a_pos[1])
-        agent_a.add_next_pos(a_next_pos)
-
-    def find_best_move(self, agent):
-        """
-        Finds the closest move to the agent's intended path that avoids obstacles and other drones
-        """
-        # Find all feasible moves for the agent
-        potential_moves = self.get_hitbox(agent.get_path_pos())
-        # print(f"the potential moves are {potential_moves}")
-        good_moves = []
-        bad_moves = []
-        # If a potential move would cause a collision, move it to bad moves
-        for move in potential_moves:
-            # Check if the move location is an obstacle
-            move_pos = to_astar(move, self._env)
-            # print(f" obtacle?: {self._map[move_pos[0]][move_pos[1]]}")
-            if self._map[move_pos[0]][move_pos[1]] == 1:
-                bad_moves.append(move)
-            # Check if move location is another drone
-            for agent_a in self._agent_list.values():
-                if (
-                    move == agent_a.get_next_pos() or move == agent_a.get_path_pos()
-                ) and agent_a.id != agent.id:
-                    bad_moves.append(move)
-        # Good moves are the remaining moves that haven't caused collisions
-        good_moves = [move for move in potential_moves if move not in bad_moves]
-        # print(f"the good moves are {good_moves}")
-
-        # Find the best of the valid moves
-        cost = []
-        # Find the distance of the move to the agent's future position or
-        for move in good_moves:
-            cost.append(self._find_move_cost(agent, move))
-            # print(f"the cost is {cost}")
-        # Find the move closest to the agent's future position or
-        # have the agent remain still of there are no good moves
-        if len(cost) == 0:
-            return agent.get_path_pos()
-        else:
-            best_move = min(cost)
-        return good_moves[cost.index(best_move)]
-
-    def _find_move_cost(self, agent, move):
-        """
-        Find the distance to a point 4 moves down the path.
-        """
-        dir_pos = agent.get_future_pos()
-        cost = abs(dir_pos[1] - move[1]) + abs(dir_pos[0] - move[0])
-        return cost
-
-    def find_collisions(self):
-        """
-        Find all potential collisions in the drones' next moves and then
-        preferbaly don't collide pls :D
-        """
-
 
         # find the max agent path length
         K = 0
@@ -535,57 +378,10 @@ class GroundControlSystem:
 
                 overlapping_agents = self.find_overlapping_agents(agent_order, k)
 
-
-        # all_hitboxes = []
-        # # find all the hitboxes and adds the points to all_hitboxes list
-        # for agent in self._agent_list.values():
-        #     all_hitboxes += self.get_hitbox(agent.get_next_pos())
-        # # print(all_hitboxes)
-
-        # # find where hitboxes overlap
-        # duplicates = []
-        # duplicates = [x for x in all_hitboxes if all_hitboxes.count(x) > 1]
-        # # print(f"duplicates: {duplicates}")
-
-        # bad_agents = []
-        # bad_agent_ids = []
-        # # if an agent enters an overlapping hitbox, add it to a list to be checked for collisions
-        # for agent in self._agent_list.values():
-        #     if agent.get_next_pos() in duplicates:
-        #         bad_agents.append(agent)
-        #         bad_agent_ids.append(agent._id)
-        # # print(f"bad agents: {bad_agent_ids}")
-
-        # # is it good code? no. but that's okay
-        # fixed_pairs = []
-
-        # # check and reroute all bad agents to avoid collisions
-        # for agent_a in bad_agents:
-        #     # print(f"bad agent a: {agent_a}")
-        #     for agent_b in bad_agents:
-        #         # print(f"agent b: {agent_b}")
-        #         # if the drones haven't been fixed already, are not the same drone,
-        #         # and are colliding, reroute the lower priority drone
-        #         if (
-        #             {agent_a, agent_b} not in fixed_pairs
-        #             and agent_a.id != agent_b.id
-        #             and agent_b.get_next_pos()
-        #             in self.get_hitbox(agent_a.get_next_pos())
-        #         ):
-        #             self._fix_collision(agent_b, agent_a)
-        #             fixed_pairs.append({agent_a, agent_b})
-        #         if (
-        #             {agent_a, agent_b} not in fixed_pairs
-        #             and agent_a.id != agent_b.id
-        #             and agent_a.get_next_pos()
-        #             in self.get_hitbox(agent_b.get_next_pos())
-        #         ):
-        #             self._fix_collision(agent_a, agent_b)
-        #             fixed_pairs.append({agent_a, agent_b})
-
     def find_overlapping_agents(self, priority_order, path_idx):
-        """ Add this ... """
+        """ Returns a list containing indices of the overlapping agents in the agent priority order """
 
+        # populate the node list, i.e. nodes that agents are in at the time step/index
         node_list = []
         for id in priority_order:
             agent_path = self._agent_list[id].get_path()
@@ -595,19 +391,21 @@ class GroundControlSystem:
             else:
                 node_list.append(agent_path[path_idx].id)
         
-        overlaps = [idx for idx, id in enumerate(node_list) if node_list.count(id) > 1]
+        # find any duplicate nodes (indicating overlapping agents)
+        overlaps = [idx for idx, id in enumerate(node_list) 
+                    if node_list.count(id) > 1 
+                    and id != ""
+                    and id != None] # TODO: Improve this list comprehension
 
-        # print(node_list)
         return overlaps
         
-
     def define_agent_priority(self, path_idx):
-        """ """
+        """Returns the agent priority order (preferably as a function of the current local state of the environment)"""
+        #TODO: Make this dependent on the local state of the environment
         return ['HB4', 'HB3', 'HB2', 'HB1']
     
-
     def fix_overlaps(self, agent_order, overlapping_agents, path_idx):
-        """ """
+        """Fixes the overlapping agents by delaying the lower priority agents by one timestep"""
         
         # delay the lower priority agent by adding an additional node at the path_idx
         lower_priority_agent = agent_order[overlapping_agents[-1]] #TODO: how about when multiple agents overlap?
@@ -617,8 +415,6 @@ class GroundControlSystem:
 
         # update agent's path
         self._agent_list[lower_priority_agent].set_path(agent_path)
-
-        print(overlapping_agents)
 
 
 @dataclass
