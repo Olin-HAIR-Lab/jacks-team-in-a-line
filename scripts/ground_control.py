@@ -88,10 +88,20 @@ class GroundControlSystem:
                
                 agent.remove_planned_task()
 
+            # print(f'Agent: {agent.get_path()}')
+            path = []
+            for n in agent.get_path():
+                path.append(n.id)
+            
+            print(path)
+
+
         self.repair_conflicts()
 
         for agent in self._agent_list.values():
             agent.update()
+
+        print('---------------------------------------------------')
 
   
 
@@ -402,7 +412,8 @@ class GroundControlSystem:
     def define_agent_priority(self, path_idx):
         """Returns the agent priority order (preferably as a function of the current local state of the environment)"""
         #TODO: Make this dependent on the local state of the environment
-        return ['HB4', 'HB3', 'HB2', 'HB1']
+        # return ['HB4', 'HB3', 'HB2', 'HB1']
+        return ['HB1']
     
     def fix_overlaps(self, agent_order, overlapping_agents, path_idx):
         """Fixes the overlapping agents by delaying the lower priority agents by one timestep"""
