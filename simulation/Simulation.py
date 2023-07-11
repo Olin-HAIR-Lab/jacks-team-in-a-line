@@ -69,7 +69,7 @@ class Simulation:
 
         agent_symbol = [0] * len(agent_traces["x"])
         symbols = ['square-dot', 'circle', 'square', 'diamond']
-        marker_sizes = [40] * len(agent_traces["x"])
+        marker_sizes = [30] * len(agent_traces["x"])
 
         self._ply_fig_animated = px.scatter(
             df,
@@ -82,7 +82,7 @@ class Simulation:
             symbol=agent_symbol,
             symbol_sequence=symbols,
             size=marker_sizes,
-            size_max=80,
+            size_max=60,
             range_x=[-1, 2],
             range_y=[-1, 1],
         )
