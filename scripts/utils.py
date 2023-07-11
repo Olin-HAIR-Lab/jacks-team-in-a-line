@@ -219,3 +219,33 @@ def print_info(loop_time):
 def dist(a, b):
     """Calculates the euclidian distance between 2 points"""
     return np.sqrt((a.x-b.x)**2 + (a.y-b.y)**2)
+
+
+
+class Node:
+    """The base unit of the environment"""
+
+    def __init__(self, id=None, pos=None, parent=None, children=None):
+        self.id = id
+        self.pos = pos
+        self.parent = parent
+        self.children = children
+
+        # Total cost function
+        self.f = 0
+        # Cost to reach node function
+        self.g = 0
+        # Heuristic function
+        self.h = 0
+
+    def __eq__(self, other):
+        """Check if two nodes are the same"""
+        return self.pos == other.pos
+
+    def manhattan_dist(self, other):
+        """Find the manhattan distance between two nodes"""
+        return abs(self.pos[0] - other.pos[0]) + abs(self.pos[1] - other.pos[1])
+    
+    def euclidean_dist(self, point):
+        """Finds the euclidean distance between node and a point [x, y]"""
+        return np.sqrt((self.pos[0] - point[0])**2 + (self.pos[1] - point[1])**2)

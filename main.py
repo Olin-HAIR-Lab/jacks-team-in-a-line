@@ -54,12 +54,16 @@ def define_env(map):
 
 if __name__ == "__main__":
     # load configuration file from YAML file
+<<<<<<< HEAD
     original_map = "./maps/base_config.yaml"
     hardware_debug_map = "./maps/hardware_debug_config.yaml"
     three_drone_map = "./maps/three_drone_config.yaml"
     test_maps = ["./maps/warehouse_config.yaml"]
+=======
+    config_file = "./maps/LPB_config.yaml"
+>>>>>>> dad44aefd601c66cc90144d56900721c92a79ead
 
-    with open(test_maps[0], "r") as file:
+    with open(config_file, "r") as file:
         config = yaml.load(file, Loader=yaml.FullLoader)
 
     use_hardware = config["use_hardware"]

@@ -2,7 +2,7 @@
 
 import numpy as np
 from math import sin, cos
-from scripts.utils import State, Position, VelCommand
+from scripts.utils import State, Position, VelCommand, Node
 import cflib.crtp
 from cflib.crazyflie import Crazyflie
 from cflib.crazyflie.syncCrazyflie import SyncCrazyflie
@@ -152,7 +152,11 @@ class Quadrotor():
             if self._path_index + 1 < len(self._path):
                 self._path_index += 1
                 next_pos = self._path[self._path_index]
-                pos_setpoint = [next_pos[0], next_pos[1], self._take_off_height, 0]
+                if isinstance(next_pos, tuple):
+                    pos_setpoint = [next_pos[0], next_pos[1], self._take_off_height, 0]
+                else:
+                    # pos_setpoint = [next_pos[0], next_pos[1], self._take_off_height, 0]
+                    pos_setpoint = [next_pos.pos[0], next_pos.pos[1], self._take_off_height, 0]
                 if self._hardware_flag:
                     self.position_setpoint_hw(pos_setpoint)
                 else:
@@ -286,7 +290,7 @@ class Quadrotor():
 
     def at_base_station(self):
         """Checks if agent is at its base station"""
-        return self._path[self._path_index] == (self._base_station.x, self._base_station.y)
+        return self._path[self._path_index].pos == [self._base_station.x, self._base_station.y]
 
     def add_task(self, task):
         """Add a task to the drone's queue"""
@@ -305,9 +309,17 @@ class Quadrotor():
         """Sets the agent's path to a given one"""
         self._path = path
 
+    def get_path(self):
+        """Returns the agent's path"""
+        return self._path
+
     def add_to_path(self, new_path):
         """Appends to the agent's path"""
-        self._path += new_path
+        if new_path is not None:
+            if isinstance(new_path, list):
+                self._path += new_path
+            else:
+                self._path += [new_path]
 
     def get_next_pos(self):
         """Returns the next position of the agent"""
@@ -326,7 +338,8 @@ class Quadrotor():
         if self._path:
             return self._path[-1]
         else:
-            return (self.get_pos().x, self.get_pos().y)
+            # return (self.get_pos().x, self.get_pos().y)
+            return Node(pos=[self.get_pos().x, self.get_pos().y])
 
     def get_pos(self):
         """Returns current position of the agent"""
