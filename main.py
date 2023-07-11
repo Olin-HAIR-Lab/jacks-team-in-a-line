@@ -57,7 +57,7 @@ if __name__ == "__main__":
     original_map = "./maps/base_config.yaml"
     hardware_debug_map = "./maps/hardware_debug_config.yaml"
     three_drone_map = "./maps/three_drone_config.yaml"
-    test_maps = ["./maps/base_config.yaml"]
+    test_maps = ["./maps/warehouse_config.yaml"]
 
     with open(test_maps[0], "r") as file:
         config = yaml.load(file, Loader=yaml.FullLoader)

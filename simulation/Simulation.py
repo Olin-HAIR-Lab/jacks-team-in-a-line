@@ -207,8 +207,8 @@ class Simulation:
             name="Drop locations",
         )
 
-        fig.update_xaxes(range=[0, 7], constrain="domain")
-        fig.update_yaxes(range=[0, 5.5], scaleanchor="x", scaleratio=1)
+        fig.update_xaxes(range=[-15.24, 15.24], constrain="domain")
+        fig.update_yaxes(range=[-18.288, 18.288], scaleanchor="x", scaleratio=1)
 
         fig.update_shapes(dict(xref="x", yref="y"))
 
