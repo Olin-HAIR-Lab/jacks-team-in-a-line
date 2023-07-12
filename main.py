@@ -55,6 +55,7 @@ def define_env(map):
 if __name__ == "__main__":
     # load configuration file from YAML file
     config_file = "./maps/warehouse_config.yaml"
+    # config_file = "./maps/LPB_config.yaml"
 
     with open(config_file, "r") as file:
         config = yaml.load(file, Loader=yaml.FullLoader)
@@ -183,6 +184,7 @@ if __name__ == "__main__":
     fig2 = go.Figure()
     fig_animated = go.Figure()
     fig3d_animated = go.Figure()
+    
     sim = Simulation(
         env=env_simplified,
         fig1=fig1,

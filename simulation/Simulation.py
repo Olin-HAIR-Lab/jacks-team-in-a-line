@@ -16,6 +16,12 @@ class Simulation:
         self._ply_fig_animated = fig_animated
         self._ply_fig3d_animated = fig3d_animated
 
+        # compute plot limits
+        self.x_min = self._env["dimensions"]["x_min"]/10
+        self.x_max = self._env["dimensions"]["x_max"]/10
+        self.y_min = self._env["dimensions"]["y_min"]/10
+        self.y_max = self._env["dimensions"]["y_max"]/10
+
     def init_plot(self):
         """creates the plotly 2D and 3D plots"""
         # 2D plot
@@ -52,25 +58,18 @@ class Simulation:
             agent_traces["z"] += agent._z_track
             agent_colors.append(agent._color)
             agent_symbol.append(1)
-            # TO DO: figure out how to add the rectangle around the moving point
-            # Attemped to add a rectangle feature that would move with the centerpoint of the drone
-            # fig_animated.add_shape(
-            #     type="rect",
-            #     x0=agent._state.x_pos - 1.5,
-            #     y0=agent._state.y_pos - 1.5,
-            #     x1=agent._state.x_pos + 1.5,
-            #     y1=agent._state.y_pos + 1.5,
-            #     line=dict(color=agent._color),
-            #     fillcolor=agent._color,
-            # )
-        # print(f"xpos: {agent._state.x_pos}, y pos: {agent._state.y_pos}")
 
         df = pd.DataFrame(data=agent_traces)    
 
         agent_symbol = [0] * len(agent_traces["x"])
         symbols = ['square-dot', 'circle', 'square', 'diamond']
         marker_sizes = [30] * len(agent_traces["x"])
+        
+        plot_area = (abs(self.x_min) + abs(self.x_max)) * (abs(self.y_min) + abs(self.y_max))
+        marker_size = round((40/plot_area)*240)
+        # print(f'Marker size is {marker_size} and plot area is {plot_area}')
 
+        # 2D plot ---------------------------------------------------------------
         self._ply_fig_animated = px.scatter(
             df,
             x="x",
@@ -82,16 +81,18 @@ class Simulation:
             symbol=agent_symbol,
             symbol_sequence=symbols,
             size=marker_sizes,
-            size_max=60,
+            size_max=marker_size,
             range_x=[-1, 2],
             range_y=[-1, 1],
+            labels={'paths'}
         )
 
-        # self._ply_fig_animated.update_traces(marker=dict(size=25, symbol="circle"))
-        # self._ply_fig_animated.update_traces(marker=dict(size=25, symbol="square-dot"))
+        # set the 2D plot window with bins, shelves, etc.
         self.create_2D_plot(self._ply_fig_animated)
+
         self._ply_fig_animated.show()
 
+        # 3D plot ---------------------------------------------------------------
         self._ply_fig3d_animated = px.scatter_3d(
             df,
             x="x",
@@ -106,6 +107,7 @@ class Simulation:
             range_z=[0, 2],
         )
         self._ply_fig3d_animated.update_traces(marker=dict(size=8, symbol="circle"))
+       
         self.create_3D_plot(self._ply_fig3d_animated)
         self._ply_fig3d_animated.show()
 
@@ -130,6 +132,8 @@ class Simulation:
         self._ply_fig1.show()
 
         self._ply_fig2.show()
+
+
 
     def create_2D_plot(self, fig):
         """creates 2D plot showing obstacles, agent start locations and task locations"""
@@ -156,8 +160,8 @@ class Simulation:
                 y0=drop_bin[0][1] / 10,
                 x1=drop_bin[1][0] / 10,
                 y1=drop_bin[1][1] / 10,
-                line=dict(color="LightGreen"),
-                fillcolor="LightGreen",
+                line=dict(color="Green"),
+                # fillcolor="LightGreen",
             )
 
         bases = self._env["bases"]
@@ -170,7 +174,7 @@ class Simulation:
                 x1=base[1][0] / 10,
                 y1=base[1][1] / 10,
                 line=dict(color="Blue"),
-                fillcolor="Blue",
+                # fillcolor="Blue",
             )
         # plot all nodes
         nodes = self._env["nodes"]
@@ -180,18 +184,18 @@ class Simulation:
                 x=[node[1][0]],
                 y=[node[1][1]],
                 mode="markers",
-                marker=dict(color="LightGrey", size=15, line_width=3, symbol="x-thin"),
+                marker=dict(color="LightGrey", size=10, line_width=1, symbol="x-thin"),
             )
 
         # plot agent start locations
-        for agent in self._agent_list.values():
-            fig.add_scatter(
-                x=[agent.base_station.x],
-                y=[agent.base_station.y],
-                mode="markers",
-                marker=dict(color=agent._color, size=15, symbol="arrow-left"),
-                name=f"{agent._id} Base Station",
-            )
+        # for agent in self._agent_list.values():
+        #     fig.add_scatter(
+        #         x=[agent.base_station.x],
+        #         y=[agent.base_station.y],
+        #         mode="markers",
+        #         marker=dict(color=agent._color, size=15, symbol="arrow-left"),
+        #         name=f"{agent._id} Base Station",
+        #     )
 
         # plot pick and drop locations
         pick_x, pick_y, drop_x, drop_y = [], [], [], []
@@ -205,21 +209,22 @@ class Simulation:
             x=pick_x,
             y=pick_y,
             mode="markers",
-            marker=dict(color="Red", size=15),
+            marker=dict(color="Red", 
+                        size=15,
+                        opacity=0.5),
             name="Pick locations",
         )
-        fig.add_scatter(
-            x=drop_x,
-            y=drop_y,
-            mode="markers",
-            marker=dict(color="DarkGreen", size=15, symbol="circle"),
-            name="Drop locations",
-        )
+        # fig.add_scatter(
+        #     x=drop_x,
+        #     y=drop_y,
+        #     mode="markers",
+        #     marker=dict(color="DarkGreen", size=15, symbol="circle"),
+        #     name="Drop locations",
+        # )
 
-        fig.update_xaxes(range=[-15.24, 15.24], constrain="domain")
-        fig.update_yaxes(range=[-18.288, 18.288], scaleanchor="x", scaleratio=1)
-
-        # fig.update_shapes(dict(xref="x", yref="y"))
+        # set the plot limits
+        fig.update_xaxes(range=[self.x_min, self.x_max], constrain="domain")
+        fig.update_yaxes(range=[self.y_min, self.y_max], scaleanchor="x", scaleratio=1)
 
     def create_3D_plot(self, fig):
         """creates 3D plot showing agent start locations and task locations"""
@@ -259,16 +264,16 @@ class Simulation:
         fig.update_layout(
             scene=dict(
                 xaxis=dict(
-                    nticks=6,
-                    range=[0, 7],
+                    # nticks=6,
+                    range=[self.x_min, self.x_max],
                 ),
                 yaxis=dict(
-                    nticks=6,
-                    range=[0, 5.5],
+                    # nticks=6,
+                    range=[self.y_min, self.y_max],
                 ),
                 zaxis=dict(
-                    nticks=6,
-                    range=[0, 2],
+                    # nticks=6,
+                    range=[0, 5],
                 ),
             ),
             width=700,
