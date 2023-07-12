@@ -254,9 +254,10 @@ class Simulation:
         for obstacle in map_obstacles:
             obs_x = [p[0] for p in obstacle]
             obs_y = [p[1] for p in obstacle]
-            for i in linspace(0, 0.6, 12):
+            # for i in linspace(0, 0.6, 12):
+            for i in linspace(0, 4.9, 100):
                 obs_z = [i] * len(obstacle)
-                fig.add_mesh3d(x=obs_x, y=obs_y, z=obs_z, color="skyblue")
+                fig.add_mesh3d(x=obs_x, y=obs_y, z=obs_z, color="skyblue", opacity=0.1)
 
         # self._ply_fig2.add_scatter3d(x=map_x, y=map_y, z=map_z,
         #                             mode='markers', showlegend=False)
@@ -317,3 +318,4 @@ class Simulation:
             marker=dict(color="rgba(0, 100, 0, 1.0)", size=10, symbol="square"),
             name="Drop locations",
         )
+        
