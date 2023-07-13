@@ -276,8 +276,9 @@ class Simulation:
                     # nticks=6,
                     range=[0, 5],
                 ),
+                aspectratio=dict(x=1.25, y=1.5, z=0.41) 
             ),
-            width=700,
+            # width=700,
             margin=dict(r=20, l=10, b=10, t=10),
         )
 
@@ -307,7 +308,7 @@ class Simulation:
             y=pick_y,
             z=pick_z,
             mode="markers",
-            marker=dict(color="rgba(240, 10, 10, 1.0)", size=10),
+            marker=dict(color="rgba(240, 10, 10, 1.0)", size=4, symbol="x"),
             name="Pick locations",
         )
         fig.add_scatter3d(
@@ -316,6 +317,7 @@ class Simulation:
             z=drop_z,
             mode="markers",
             marker=dict(color="rgba(0, 100, 0, 1.0)", size=10, symbol="square"),
+            # marker=dict(color="rgba(0, 100, 0, 1.0)", size=10),
             name="Drop locations",
         )
         
