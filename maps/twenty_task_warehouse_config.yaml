@@ -23,7 +23,7 @@ agent_colors:   ['DarkBlue', 'DarkSlateGrey', 'MediumPurple', 'SafetyOrange']
 # Pick up location (the bin at which the item has to be picked
 #                 Pick ID, [pick x, pick y, pick z] tbd 
 pick_loc:       [['T34', [-14.5, -1.6, 2.7]],
-                ['T1', [14.5, 17.2, 2.7]],
+                ['TG16', [5.8, 11.4, 2.7]],
                 ['TF4', [2.9, -5.9, 2.7]],
                 ['T77', [14.5, 11.4, 2.7]],
                 ['TE13', [0, 7.1, 2.7]],
