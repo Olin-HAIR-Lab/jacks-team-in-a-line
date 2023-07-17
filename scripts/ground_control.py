@@ -5,6 +5,7 @@ import numpy as np
 import matplotlib.pyplot as plt
 import math
 import time
+from copy import deepcopy
 import networkx as nx
 from scripts.a_star import astar
 from scripts.generate_map import base_map, to_astar, from_astar, create_graph, get_node_id
@@ -29,79 +30,124 @@ class GroundControlSystem:
         self._graph = create_graph(env)
         # print(self._graph)
 
+        self.count = 0
+
     def update(self):
+        """ ADD """
         self._agents_active = False
         for agent_id, agent in self._agent_list.items():
             # set agent as active if task is incomplete
             if not agent.tasks_complete:
                 self._agents_active = True
+
             # check if agent is at the end of it's path
             if agent.path_complete():
+
+                print(f'Agent {agent_id} is done!!')
+
                 # if agent is not at the base station, plan a path to the base station
                 if not agent.at_base_station():
                     end_point = get_node_id(agent.get_path_end(), self._graph)
                     base_loc = get_node_id(
-                        (agent.base_station.x, agent.base_station.y), self._graph
+                        (agent.base_station.x, 
+                         agent.base_station.y, 
+                         agent.base_station.z), 
+                         self._graph
                     )
                     return_path = astar(end_point, base_loc, self._graph)
                     agent.clear_tasks_and_path()
                     agent.add_to_path(return_path)
-                    agent.add_to_path([Node(pos=[agent.base_station.x, agent.base_station.y])] * 2)
+                    agent.add_to_path([Node(pos=[agent.base_station.x, 
+                                                 agent.base_station.y,
+                                                 agent.base_station.z])] * 2)
+                    
+                    print(f'Agent {agent_id} is not at base station... planning to get there!!')
                 
                 # if agent is at base station, add base node and set task as complete
                 else:
                     agent.clear_tasks_and_path()
-                    agent.add_to_path([Node(pos=[agent.base_station.x, agent.base_station.y])] * 2)
+                    agent.add_to_path([Node(pos=[agent.base_station.x, 
+                                                 agent.base_station.y,
+                                                 agent.base_station.z])] * 2)
                     agent.set_tasks_complete(True)
 
+                    print(f'Agent {agent_id} IS at base station!!')
+
+            # add agent to available_for_task list if its available and not on the list
+            # remove agent from the list if it's actually not available for task (i.e. agent's task_queue length < 3)
             if agent.available_for_task() and agent_id not in self._available_agents:
                 self._available_agents.append(agent_id)
             elif not agent.available_for_task() and agent_id in self._available_agents:
                 self._available_agents.remove(agent_id)
 
+        # print(f'Task queue: {self._task_queue}')
+
         self.assign_tasks()
+
+        # print(f'Available agents: {self._available_agents}')
+        # print(f'Task queue: {self._task_queue}')
 
         for agent_id in self._available_agents:
             agent = self._agent_list[agent_id]
             if agent.task_to_plan:
+
                 task = self._task_list[agent.task_to_plan]
 
+                print(f'Agent {agent_id} is planning a task {task.id}')
+
                 base_loc = get_node_id(agent.get_path_end(), self._graph)
-                pick_loc = get_node_id((task.pick_loc.x, task.pick_loc.y), self._graph)
-                drop_loc = get_node_id((task.drop_loc.x, task.drop_loc.y), self._graph)
+                pick_loc = get_node_id((task.pick_loc.x, 
+                                        task.pick_loc.y,
+                                        task.pick_loc.z), 
+                                        self._graph
+                            )
+                drop_loc = get_node_id((task.drop_loc.x, 
+                                        task.drop_loc.y,
+                                        task.drop_loc.z), 
+                                        self._graph
+                            )
 
                 # plan and add paths to agent path
                 # base_loc -> pick_loc
                 astar_path = astar(base_loc, pick_loc, self._graph)
                 agent.add_to_path(astar_path)
                     # agent stays at pick location for two timesteps
-                agent.add_to_path(Node(id=pick_loc, pos=[task.pick_loc.x, task.pick_loc.y]))
+                agent.add_to_path(Node(id=pick_loc, 
+                                       pos=[task.pick_loc.x, 
+                                            task.pick_loc.y,
+                                            task.pick_loc.z]))
                 # pick_loc -> drop_loc
                 astar_path = astar(pick_loc, drop_loc, self._graph)
                 agent.add_to_path(astar_path)
                     # agent stays at drop location for two timesteps
-                agent.add_to_path(Node(id=drop_loc, pos=[task.drop_loc.x, task.drop_loc.y]))
+                agent.add_to_path(Node(id=drop_loc, 
+                                       pos=[task.drop_loc.x, 
+                                            task.drop_loc.y,
+                                            task.drop_loc.z],
+                                       parent=['None']))
                 # drop_loc -> base_loc
                 astar_path = astar(drop_loc, base_loc, self._graph)
                 agent.add_to_path(astar_path)
-                agent.add_to_path(Node(id=base_loc, pos=[agent.base_station.x, agent.base_station.y]))
+                agent.add_to_path(Node(id=base_loc, 
+                                       pos=[agent.base_station.x, 
+                                            agent.base_station.y,
+                                            agent.base_station.z]))
                
                 agent.remove_planned_task()
 
-            # print(f'Agent: {agent.get_path()}')
-            # path = []
-            # for n in agent.get_path():
-            #     path.append(n.id)
-            
-            # print(path)
-
+        # self.adjust_for_plane_change()
 
         self.repair_conflicts()
 
         for agent in self._agent_list.values():
             agent.update()
 
-        # print('---------------------------------------------------')
+        print('---------------------------------------------------')
+
+        self.count += 1
+
+        print(f'Timestep is {self.count}')
+        print('---------------------------------------------------')
 
   
 
@@ -363,6 +409,38 @@ class GroundControlSystem:
             ans_mat[pos[i][0], pos[i][1]] = mat[pos[i][0], pos[i][1]]
         return total, ans_mat
 
+    def adjust_for_plane_change(self):
+        """
+        Method searches all agent paths and adds an intermediate node between bottom and top plane
+        to account for the plane change
+        """
+        for agent in self._agent_list.values():
+            agent_path = agent.get_path()
+
+            path_idx = 0
+
+            while path_idx < len(agent_path)-2:
+                first_node = agent_path[path_idx]
+                next_node = agent_path[path_idx+1]
+                # check if the two adjacent nodes are on the different planes (i.e. have different z values)
+                # if first_node.id[0] != next_node.id[0]:
+                if (first_node.id[0] == 'T' and next_node.id[0] == 'B') or \
+                   (first_node.id[0] == 'B' and next_node.id[0] == 'T'):
+                    # insert a mid node between both
+                    agent_path.insert(path_idx+1, 
+                                      Node(id=first_node.id+'_mid', 
+                                           pos=[first_node.pos[0],
+                                                first_node.pos[1],
+                                                abs(first_node.pos[2]-next_node.pos[2])])) # TODO: This is buggy... value is 1.8 for the unique values of top and bottom planes
+                    # advance past the added node
+                    path_idx += 1
+                # advance to next node
+                path_idx += 1
+
+            # update agent's path
+            agent.set_path(agent_path)
+
+
     def repair_conflicts(self):
         """
         Performs the local repair operation by stepping through the agent paths to find and fix any overlaps
@@ -382,11 +460,22 @@ class GroundControlSystem:
             overlapping_agents = self.find_overlapping_agents(agent_order, k)
 
             # cycle through until there's no overlap along the priority list
+            old_overlap = None
             while overlapping_agents:
-                self.fix_overlaps(agent_order, overlapping_agents, k)
+
+                if old_overlap == overlapping_agents and overlapping_agents != []:
+                    self.fix_overlaps(agent_order, overlapping_agents, k, reverse=True)
+
+                else:
+                    self.fix_overlaps(agent_order, overlapping_agents, k)
+
+                old_overlap = overlapping_agents.copy()
+                                
                 overlapping_agents.clear()
 
                 overlapping_agents = self.find_overlapping_agents(agent_order, k)
+
+                print(f'fixing overlap for {overlapping_agents}')
 
     def find_overlapping_agents(self, priority_order, path_idx):
         """ Returns a list containing indices of the overlapping agents in the agent priority order """
@@ -419,17 +508,36 @@ class GroundControlSystem:
         return priority_order
         
     
-    def fix_overlaps(self, agent_order, overlapping_agents, path_idx):
+    def fix_overlaps(self, agent_order, overlapping_agents, path_idx, reverse=False):
         """Fixes the overlapping agents by delaying the lower priority agents by one timestep"""
         
+        if reverse:
+            # agent_order.reverse()
+
+            print(f'Path idx: {path_idx}')
+            overlapping_agents.reverse()
+
+            higher_priority_agent = agent_order[overlapping_agents[0]]
+            agent_path_2 = self._agent_list[higher_priority_agent].get_path()
+
+            print(f'Path length: {len(agent_path_2)}')
+
+            agent_path_2.pop(path_idx+1)
+            self._agent_list[higher_priority_agent].set_path(agent_path_2)
+
+
         # delay the lower priority agent by adding an additional node at the path_idx
         lower_priority_agent = agent_order[overlapping_agents[-1]] #TODO: how about when multiple agents overlap?
         agent_path = self._agent_list[lower_priority_agent].get_path()
         # duplicate the node at the path index
         agent_path.insert(path_idx, agent_path[path_idx-1])
-
         # update agent's path
         self._agent_list[lower_priority_agent].set_path(agent_path)
+
+            
+
+
+        
 
 
 @dataclass
@@ -475,10 +583,15 @@ class Heuristic:
         """
         x_dist = pos_1[0] - pos_2.x
         y_dist = pos_1[1] - pos_2.y
-        return math.sqrt(abs(x_dist) ** 2 + abs(y_dist) ** 2)
+        z_dist = pos_1[2] - pos_2.z
+        return math.sqrt(abs(x_dist) ** 2 + 
+                         abs(y_dist) ** 2 +
+                         abs(z_dist) ** 2)
 
     def get_manhattan_distance(self, pos_1, pos_2):
-        return abs(pos_1.pos[0] - pos_2.x) + abs(pos_1.pos[1] - pos_2.y)
+        return abs(pos_1.pos[0] - pos_2.x) + \
+               abs(pos_1.pos[1] - pos_2.y) + \
+               abs(pos_1.pos[2] - pos_2.z)
 
     @property
     def cost(self):

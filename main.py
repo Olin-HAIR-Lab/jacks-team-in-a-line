@@ -65,7 +65,7 @@ if __name__ == "__main__":
     colors = config["agent_colors"]
     time_delta = config["time_delta"]
     env_simplified = config["map"].copy()
-    print(env_simplified)
+    # print(env_simplified)
     env = define_env(config["map"])
     num_agents = len(agent_init)
 
@@ -97,7 +97,9 @@ if __name__ == "__main__":
                 z=pick_locations[i][1][2],
             ),
             drop_loc=Position(
-                x=drop_locations[i][1][0], y=drop_locations[i][1][1], z=0.0
+                x=drop_locations[i][1][0], 
+                y=drop_locations[i][1][1],
+                z=drop_locations[i][1][2]
             ),
             pick_id=pick_locations[i][0],
             drop_id=drop_locations[i][0],

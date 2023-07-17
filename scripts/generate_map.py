@@ -27,11 +27,15 @@ class Node:
     
     def euclidean_dist_node(self, node):
         """Finds the euclidean distance between node and another node"""
-        return np.sqrt((self.pos[0] - node.pos[0])**2 + (self.pos[1] - node.pos[1])**2)
+        return np.sqrt((self.pos[0] - node.pos[0])**2 + 
+                       (self.pos[1] - node.pos[1])**2 +
+                       (self.pos[2] - node.pos[2])**2)
     
     def euclidean_dist_point(self, point):
         """Finds the euclidean distance between node and a point"""
-        return np.sqrt((self.pos[0] - point[0])**2 + (self.pos[1] - point[1])**2)
+        return np.sqrt((self.pos[0] - point[0])**2 + 
+                       (self.pos[1] - point[1])**2 +
+                       (self.pos[2] - point[2])**2)
     
 
 def create_graph(env):
@@ -42,7 +46,7 @@ def create_graph(env):
     # iterate through nodes in env and create Node objects
     nodes = env["nodes"]
     for node in nodes:
-        n = Node(id=node[0], pos=[node[1][0], node[1][1]])
+        n = Node(id=node[0], pos=[node[1][0], node[1][1], node[1][2]])
         n.children = []
         for child in node[2]:
             n.children.append(child)

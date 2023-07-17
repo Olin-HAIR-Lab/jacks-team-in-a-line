@@ -107,7 +107,15 @@ class Simulation:
             range_z=[0, 2],
         )
         self._ply_fig3d_animated.update_traces(marker=dict(size=8, symbol="circle"))
-       
+        for agent in self._agent_list.values():
+            self._ply_fig3d_animated.add_scatter3d(
+                x=agent._x_track,
+                y=agent._y_track,
+                z=agent._z_track,
+                mode="lines+markers",
+                marker=dict(color=agent._color, size=3, symbol="circle"),
+            )
+        
         self.create_3D_plot(self._ply_fig3d_animated)
         self._ply_fig3d_animated.show()
 
@@ -130,7 +138,6 @@ class Simulation:
             )
 
         self._ply_fig1.show()
-
         self._ply_fig2.show()
 
 
@@ -230,18 +237,7 @@ class Simulation:
         """creates 3D plot showing agent start locations and task locations"""
 
         # plot the obstacles
-        map_x = []
-        map_y = []
-        map_z = []
-
         obstacles = self._env["obstacles"]
-
-        # num = linspace(0,0.6,12)
-        # for j in num:
-        #     for i in range(len(obstacles)):
-        #         map_x.append(obstacles[i][0]/10)
-        #         map_y.append(obstacles[i][1]/10)
-        #         map_z.append(j)
 
         map_obstacles = []
         for obstacle in obstacles:

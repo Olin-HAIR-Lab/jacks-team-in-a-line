@@ -153,10 +153,10 @@ class Quadrotor():
                 self._path_index += 1
                 next_pos = self._path[self._path_index]
                 if isinstance(next_pos, tuple):
-                    pos_setpoint = [next_pos[0], next_pos[1], self._take_off_height, 0]
+                    pos_setpoint = [next_pos[0], next_pos[1], next_pos[2], 0]
                 else:
                     # pos_setpoint = [next_pos[0], next_pos[1], self._take_off_height, 0]
-                    pos_setpoint = [next_pos.pos[0], next_pos.pos[1], self._take_off_height, 0]
+                    pos_setpoint = [next_pos.pos[0], next_pos.pos[1], next_pos.pos[2], 0]
                 if self._hardware_flag:
                     self.position_setpoint_hw(pos_setpoint)
                 else:
@@ -290,7 +290,9 @@ class Quadrotor():
 
     def at_base_station(self):
         """Checks if agent is at its base station"""
-        return self._path[self._path_index].pos == [self._base_station.x, self._base_station.y]
+        return self._path[self._path_index].pos == [self._base_station.x, 
+                                                    self._base_station.y,
+                                                    self._base_station.z]
 
     def add_task(self, task):
         """Add a task to the drone's queue"""
@@ -339,7 +341,7 @@ class Quadrotor():
             return self._path[-1]
         else:
             # return (self.get_pos().x, self.get_pos().y)
-            return Node(pos=[self.get_pos().x, self.get_pos().y])
+            return Node(pos=[self.get_pos().x, self.get_pos().y, self.get_pos().z])
 
     def get_pos(self):
         """Returns current position of the agent"""
@@ -386,7 +388,7 @@ class Quadrotor():
 
 
     def reset_estimator(self):
-        """Resets the kalmal filter on the state estimator"""
+        """Resets the kalman filter on the state estimator"""
         cf = self.scf.cf
         cf.param.set_value('kalman.resetEstimation', '1')
         time.sleep(0.1)
