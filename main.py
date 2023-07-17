@@ -54,7 +54,8 @@ def define_env(map):
 
 if __name__ == "__main__":
     # load configuration file from YAML file
-    config_file = "./maps/warehouse_config.yaml"
+    config_file = "./maps/four_layer_warehouse_config.yaml"
+    # config_file = "./maps/warehouse_config.yaml"
     # config_file = "./maps/LPB_config.yaml"
 
     with open(config_file, "r") as file:
