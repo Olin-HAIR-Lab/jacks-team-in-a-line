@@ -66,8 +66,8 @@ class Simulation:
         marker_sizes = [30] * len(agent_traces["x"])
         
         plot_area = (abs(self.x_min) + abs(self.x_max)) * (abs(self.y_min) + abs(self.y_max))
-        # marker_size = round((40/plot_area)*240)
-        marker_size = round((40/plot_area)*65)
+        marker_size = round((40/plot_area)*240)
+        # marker_size = round((40/plot_area)*65)
         # print(f'Marker size is {marker_size} and plot area is {plot_area}')
 
         # 2D plot ---------------------------------------------------------------
@@ -114,7 +114,7 @@ class Simulation:
                 y=agent._y_track,
                 z=agent._z_track,
                 mode="lines+markers",
-                marker=dict(color=agent._color, size=3, symbol="circle"),
+                marker=dict(color=agent._color, size=2, symbol="circle", opacity=0.2),
             )
         
         self.create_3D_plot(self._ply_fig3d_animated)
